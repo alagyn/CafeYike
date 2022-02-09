@@ -1,2 +1,2 @@
 # CafeYike
-Successor to the YikeSnake, a revolutionizing Discord Bot
+Successor to the YikeSnake, a revolutionary Discord Bot
