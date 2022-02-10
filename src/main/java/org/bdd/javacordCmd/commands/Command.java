@@ -7,5 +7,8 @@ import org.javacord.api.event.message.MessageCreateEvent;
 public interface Command
 {
     void call(MessageCreateEvent event, Arguments args) throws CmdError;
+
+    void shutdown();
+
     String[] getNames();
 }

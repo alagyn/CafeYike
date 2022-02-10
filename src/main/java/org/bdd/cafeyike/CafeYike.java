@@ -1,5 +1,6 @@
 package org.bdd.cafeyike;
 
+import org.bdd.cafeyike.commands.Admin;
 import org.bdd.javacordCmd.commands.Command;
 import org.bdd.cafeyike.commands.Yike;
 import org.bdd.javacordCmd.exceptions.BotError;
@@ -15,11 +16,14 @@ public class CafeYike
     {
         Bot bot = Bot.inst;
 
-        Command[] cmds = new Command[1];
+        Command[] cmds = null;
 
         try
         {
-            cmds[0] = new Yike();
+            cmds = new Command[] {
+                    new Yike(),
+                    new Admin()
+            };
         }
         catch(CmdError cmdError)
         {

@@ -19,8 +19,8 @@ public class Yike extends Cog
         yikemap = new ConcurrentHashMap<>();
         //TODO load yike map
 
-        addCommand(new CogFunc(new String[]{"yike", "y"}, this::yike));
-        addCommand(new CogFunc(new String[]{"unyike", "uy"}, this::unyike));
+        addCommand(new CogFunc(new String[] {"yike", "y"}, this::yike));
+        addCommand(new CogFunc(new String[] {"unyike", "uy"}, this::unyike));
     }
 
     public void yike(MessageCreateEvent event, Arguments args) throws ArgumentError
@@ -80,4 +80,9 @@ public class Yike extends Cog
         event.getChannel().sendMessage(nick + " now has " + newval + " yikes");
     }
 
+    @Override
+    public void shutdown()
+    {
+        //TODO save yikelog?
+    }
 }

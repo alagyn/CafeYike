@@ -20,6 +20,8 @@ public class Bot
     private DiscordApi api;
     private final DiscordApiBuilder temp_builder;
 
+    private CommandListener cl = null;
+
     private Bot()
     {
         config = new Properties();
@@ -55,7 +57,7 @@ public class Bot
 
         api = temp_builder.login().join();
 
-        CommandListener cl = new CommandListener(prefix);
+        cl = new CommandListener(prefix);
 
         for(Command c : cmds)
         {
@@ -68,6 +70,12 @@ public class Bot
     public DiscordApi getApi()
     {
         return api;
+    }
+
+    public void shutdown()
+    {
+        cl.shutdown();
+        System.exit(0);
     }
 
 }

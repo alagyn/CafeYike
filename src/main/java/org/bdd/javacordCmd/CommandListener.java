@@ -26,6 +26,12 @@ public class CommandListener implements MessageCreateListener
     @Override
     public void onMessageCreate(MessageCreateEvent event)
     {
+        //Ignore messages from ourselves
+        if(event.getMessageAuthor().isYourself())
+        {
+            return;
+        }
+
         String content = event.getMessageContent();
 
         if(content.startsWith(prefix))
@@ -41,5 +47,10 @@ public class CommandListener implements MessageCreateListener
                 e.printStackTrace();
             }
         }
+    }
+
+    public void shutdown()
+    {
+        commands.shutdown();
     }
 }

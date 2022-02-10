@@ -17,6 +17,13 @@ public abstract class Cog implements Command
 
     public record CogFunc(String[] aliases, CogFuncRef cmd)
     {
+        public CogFunc
+        {
+            if(aliases.length == 0)
+            {
+                throw new CmdError("No command name given");
+            }
+        }
     }
 
     public final String cogName;

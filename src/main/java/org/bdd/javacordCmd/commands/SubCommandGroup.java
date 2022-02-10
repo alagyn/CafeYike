@@ -6,6 +6,8 @@ import org.bdd.javacordCmd.exceptions.CmdNotFoundError;
 import org.javacord.api.event.message.MessageCreateEvent;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+
 
 public class SubCommandGroup implements Command
 {
@@ -13,6 +15,7 @@ public class SubCommandGroup implements Command
     public final String groupName;
 
     private final String[] groupAliases;
+    private final LinkedList<String> defaultNames;
 
     private Command defaultCmd;
 
@@ -20,6 +23,8 @@ public class SubCommandGroup implements Command
     {
         this.groupAliases = groupAliases;
         this.groupName = groupAliases[0];
+        defaultNames = new LinkedList<>();
+
         commandMap = new HashMap<>();
         defaultCmd = null;
     }
@@ -63,6 +68,15 @@ public class SubCommandGroup implements Command
     }
 
     @Override
+    public void shutdown()
+    {
+        for(String name : defaultNames)
+        {
+            commandMap.get(name).shutdown();
+        }
+    }
+
+    @Override
     public String[] getNames()
     {
         return groupAliases;
@@ -70,7 +84,14 @@ public class SubCommandGroup implements Command
 
     public void addCommand(Command c) throws CmdError
     {
-        for(String alias : c.getNames())
+        String[] names = c.getNames();
+
+        if(names.length <= 0)
+        {
+            throw new CmdError("No command name given");
+        }
+
+        for(String alias : names)
         {
             if(commandMap.containsKey(alias))
             {
@@ -79,6 +100,8 @@ public class SubCommandGroup implements Command
 
             commandMap.put(alias, c);
         }
+
+        defaultNames.add(c.getNames()[0]);
     }
 
     public void setDefaultCmd(Command c)
