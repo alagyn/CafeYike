@@ -113,11 +113,9 @@ public class Arguments
 
     private static final Pattern userPattern = Pattern.compile("<@!(?<id>\\d+)>");
 
-    public User nextUser() throws ArgumentError
+    public static User getUser(String s)
     {
-        String str = next(true);
-
-        Matcher m = userPattern.matcher(str);
+        Matcher m = userPattern.matcher(s);
 
         if(!m.matches())
         {
@@ -128,6 +126,12 @@ public class Arguments
         long id = Long.parseLong(sid);
 
         return Bot.inst.getApi().getUserById(id).join();
+    }
+
+    public User nextUser() throws ArgumentError
+    {
+        String str = next(true);
+        return getUser(str);
     }
 
     public String remainder()

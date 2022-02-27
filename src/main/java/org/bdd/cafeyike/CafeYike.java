@@ -1,6 +1,7 @@
 package org.bdd.cafeyike;
 
 import org.bdd.cafeyike.commands.Admin;
+import org.bdd.cafeyike.commands.ButtonTest;
 import org.bdd.javacordCmd.commands.Command;
 import org.bdd.cafeyike.commands.Yike;
 import org.bdd.javacordCmd.exceptions.BotError;
@@ -22,7 +23,8 @@ public class CafeYike
         {
             cmds = new Command[] {
                     new Yike(),
-                    new Admin()
+                    new Admin(),
+                    new ButtonTest()
             };
         }
         catch(CmdError cmdError)

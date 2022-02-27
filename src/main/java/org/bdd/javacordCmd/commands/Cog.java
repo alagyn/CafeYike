@@ -10,14 +10,14 @@ import java.util.function.BiConsumer;
 
 public abstract class Cog implements Command
 {
-    public interface CogFuncRef extends BiConsumer<MessageCreateEvent, Arguments>
+    public interface FuncRef extends BiConsumer<MessageCreateEvent, Arguments>
     {
 
     }
 
-    public record CogFunc(String[] aliases, CogFuncRef cmd)
+    public static record Func(String[] aliases, FuncRef cmd)
     {
-        public CogFunc
+        public Func
         {
             if(aliases.length == 0)
             {
@@ -33,9 +33,9 @@ public abstract class Cog implements Command
         this.cogName = name;
     }
 
-    private final HashMap<String, CogFunc> commands = new HashMap<>();
+    private final HashMap<String, Func> commands = new HashMap<>();
 
-    public void addCommand(CogFunc cmd)
+    public void addCommand(Func cmd)
     {
         for(String a : cmd.aliases)
         {
@@ -53,7 +53,7 @@ public abstract class Cog implements Command
     {
         String commandName = args.peekPrev();
 
-        CogFunc c = commands.get(commandName);
+        Func c = commands.get(commandName);
 
         if(c == null)
         {

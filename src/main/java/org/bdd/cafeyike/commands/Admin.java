@@ -11,7 +11,7 @@ public class Admin extends Cog
     {
         super("Admin");
 
-        addCommand(new CogFunc(
+        addCommand(new Func(
                 new String[]{"logout", "lo"},
                 this::logout
         ));
