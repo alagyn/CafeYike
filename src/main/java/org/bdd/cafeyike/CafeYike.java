@@ -13,6 +13,8 @@ public class CafeYike
 {
     private static final Intent[] intents = {Intent.GUILD_MEMBERS, Intent.GUILDS, Intent.GUILD_MESSAGES, Intent.GUILD_EMOJIS, Intent.GUILD_BANS, Intent.GUILD_MESSAGE_REACTIONS, Intent.GUILD_VOICE_STATES};
 
+    public static final String YIKE_LOG = "./dat/yikelog.json";
+
     public static void main(String[] args)
     {
         Bot bot = Bot.inst;

@@ -15,7 +15,7 @@ public abstract class Cog implements Command
 
     }
 
-    public static record Func(String[] aliases, FuncRef cmd)
+    public record Func(String[] aliases, FuncRef cmd)
     {
         public Func
         {
@@ -68,4 +68,5 @@ public abstract class Cog implements Command
     {
         return commands.keySet().toArray(new String[0]);
     }
+
 }

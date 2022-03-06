@@ -39,9 +39,14 @@ public class Bot
         temp_builder = new DiscordApiBuilder().setToken(config.getProperty("DISCORD_TOKEN"));
     }
 
-    public String getConfig(String key)
+    public static String getConfig(String key)
     {
-        return config.getProperty(key);
+        return inst.config.getProperty(key);
+    }
+
+    public static int getIntConfig(String key)
+    {
+        return Integer.parseInt(inst.config.getProperty(key));
     }
 
     public void init(String prefix, Intent[] intents, Command[] cmds) throws BotError
