@@ -15,14 +15,20 @@ public abstract class Cog implements Command
 
     }
 
-    public record Func(String[] aliases, FuncRef cmd)
+    public class Func
     {
-        public Func
+        String[] aliases;
+        FuncRef cmd;
+
+        public Func(String[] aliases, FuncRef cmd)
         {
             if(aliases.length == 0)
             {
                 throw new CmdError("No command name given");
             }
+
+            this.aliases = aliases;
+            this.cmd = cmd;
         }
     }
 

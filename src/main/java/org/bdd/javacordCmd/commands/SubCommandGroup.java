@@ -95,7 +95,7 @@ public class SubCommandGroup implements Command
         {
             if(commandMap.containsKey(alias))
             {
-                throw new CmdError("Repeated command name: '%s' in group: '%s'".formatted(alias, groupName));
+                throw new CmdError(String.format("Repeated command name: '%s' in group: '%s'", alias, groupName));
             }
 
             commandMap.put(alias, c);

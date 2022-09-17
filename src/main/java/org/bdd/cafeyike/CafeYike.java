@@ -21,6 +21,7 @@ public class CafeYike
 
         Command[] cmds = null;
 
+        System.out.println("Loading Commands");
         try
         {
             cmds = new Command[] {
@@ -34,6 +35,7 @@ public class CafeYike
             cmdError.printStackTrace();
         }
 
+        System.out.println("Initializing Bot");
         try
         {
             bot.init("_", intents, cmds);

@@ -8,6 +8,7 @@ import org.bdd.javacordCmd.exceptions.ArgumentError;
 import org.bdd.javacordCmd.exceptions.BotError;
 import org.bdd.javacordCmd.exceptions.UsageError;
 import org.bdd.javacordCmd.utils.MsgDeleteAfter;
+
 import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.MessageBuilder;
 import org.javacord.api.entity.message.component.ActionRow;
@@ -251,8 +252,19 @@ public class Yike extends Cog
         });
     }
 
-    private record YikeEntry(long id, int cnt, String display) implements Comparable<YikeEntry>
+    private class YikeEntry implements Comparable<YikeEntry>
     {
+
+        public long id;
+        public int cnt;
+        public String display;
+
+        public YikeEntry(long id, int cnt, String display)
+        {
+            this.id = id;
+            this.cnt = cnt;
+            this.display = display;
+        }
 
         @Override
         public int compareTo(YikeEntry o)
