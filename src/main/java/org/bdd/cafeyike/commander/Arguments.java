@@ -1,7 +1,7 @@
-package org.bdd.javacordCmd;
+package org.bdd.cafeyike.commander;
 
-import org.bdd.javacordCmd.exceptions.ArgumentError;
-import org.bdd.javacordCmd.exceptions.CmdError;
+import org.bdd.cafeyike.commander.exceptions.ArgumentError;
+import org.bdd.cafeyike.commander.exceptions.CmdError;
 import org.javacord.api.entity.user.User;
 
 import java.util.regex.Matcher;
@@ -111,7 +111,7 @@ public class Arguments
         return out;
     }
 
-    private static final Pattern userPattern = Pattern.compile("<@!(?<id>\\d+)>");
+    private static final Pattern userPattern = Pattern.compile("<@!?(?<id>\\d+)>");
 
     public static User getUser(String s)
     {

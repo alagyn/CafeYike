@@ -1,17 +1,15 @@
-package org.bdd.javacordCmd.commands;
-
-import org.bdd.javacordCmd.Arguments;
-import org.bdd.javacordCmd.exceptions.CmdError;
-import org.bdd.javacordCmd.exceptions.CmdNotFoundError;
-import org.javacord.api.event.message.MessageCreateEvent;
+package org.bdd.cafeyike.commander.commands;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+import org.bdd.cafeyike.commander.Arguments;
+import org.bdd.cafeyike.commander.exceptions.CmdError;
+import org.bdd.cafeyike.commander.exceptions.CmdNotFoundError;
+import org.javacord.api.event.message.MessageCreateEvent;
 
-
-public class SubCommandGroup implements Command
+public class SubCommandGroup extends Command
 {
-    public HashMap<String, Command> commandMap;
+    private HashMap<String, Command> commandMap;
     public final String groupName;
 
     private final String[] groupAliases;
@@ -54,7 +52,6 @@ public class SubCommandGroup implements Command
                 args.prev(true);
                 c = defaultCmd;
             }
-
         }
 
         try
@@ -63,7 +60,7 @@ public class SubCommandGroup implements Command
         }
         catch(CmdError e)
         {
-            throw new CmdError(groupName + ":" + e.getMessage());
+            throw new CmdError(groupName + ": " + e.getMessage());
         }
     }
 
@@ -77,14 +74,14 @@ public class SubCommandGroup implements Command
     }
 
     @Override
-    public String[] getNames()
+    public String[] getAliases()
     {
         return groupAliases;
     }
 
     public void addCommand(Command c) throws CmdError
     {
-        String[] names = c.getNames();
+        String[] names = c.getAliases();
 
         if(names.length <= 0)
         {
@@ -95,13 +92,24 @@ public class SubCommandGroup implements Command
         {
             if(commandMap.containsKey(alias))
             {
-                throw new CmdError(String.format("Repeated command name: '%s' in group: '%s'", alias, groupName));
+                throw new CmdError(
+                    String.format("Repeated command name: '%s' in group: '%s'", alias, groupName));
             }
 
             commandMap.put(alias, c);
         }
 
-        defaultNames.add(c.getNames()[0]);
+        defaultNames.add(c.getAliases()[0]);
+    }
+
+    public Command getCommand(String name)
+    {
+        Command out = commandMap.get(name);
+        if(out == null)
+        {
+            throw new CmdNotFoundError(name);
+        }
+        return out;
     }
 
     public void setDefaultCmd(Command c)
@@ -109,4 +117,29 @@ public class SubCommandGroup implements Command
         this.defaultCmd = c;
     }
 
+    @Override
+    public String getHelp(boolean showAdmin, boolean showBotOwner)
+    {
+        StringBuilder out = new StringBuilder();
+
+        for(String name : defaultNames)
+        {
+            Command c = commandMap.get(name);
+            if((!showAdmin && c.adminOnly) || (!showBotOwner && c.botOwnerOnly))
+            {
+                continue;
+            }
+
+            out.append(c.getHelp(showAdmin, showBotOwner));
+            out.append("\n");
+        }
+
+        return out.toString();
+    }
+
+    @Override
+    public String getUsage()
+    {
+        return "na";
+    }
 }

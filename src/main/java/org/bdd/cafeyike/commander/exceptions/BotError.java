@@ -1,4 +1,4 @@
-package org.bdd.javacordCmd.exceptions;
+package org.bdd.cafeyike.commander.exceptions;
 
 /**
  * Bot level generic error

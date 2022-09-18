@@ -1,20 +1,17 @@
 package org.bdd.cafeyike.commands;
 
-import org.bdd.javacordCmd.Arguments;
-import org.bdd.javacordCmd.Bot;
-import org.bdd.javacordCmd.commands.Cog;
+import org.bdd.cafeyike.commander.Arguments;
+import org.bdd.cafeyike.commander.Bot;
+import org.bdd.cafeyike.commander.commands.Cog;
 import org.javacord.api.event.message.MessageCreateEvent;
 
 public class Admin extends Cog
 {
     public Admin()
     {
-        super("Admin");
+        super("Admin", "Admin Commands");
 
-        addCommand(new Func(
-                new String[]{"logout", "lo"},
-                this::logout
-        ));
+        addCommand(new CmdFunc(new String[] {"logout", "lo"}, this::logout, "logout", "", false, true));
     }
 
     public void logout(MessageCreateEvent event, Arguments args)
@@ -28,6 +25,6 @@ public class Admin extends Cog
     @Override
     public void shutdown()
     {
-
+        // Pass
     }
 }

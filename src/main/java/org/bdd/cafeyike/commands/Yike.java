@@ -1,14 +1,21 @@
 package org.bdd.cafeyike.commands;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.bdd.cafeyike.CafeYike;
-import org.bdd.javacordCmd.Arguments;
-import org.bdd.javacordCmd.Bot;
-import org.bdd.javacordCmd.commands.Cog;
-import org.bdd.javacordCmd.exceptions.ArgumentError;
-import org.bdd.javacordCmd.exceptions.BotError;
-import org.bdd.javacordCmd.exceptions.UsageError;
-import org.bdd.javacordCmd.utils.MsgDeleteAfter;
-
+import org.bdd.cafeyike.commander.Arguments;
+import org.bdd.cafeyike.commander.Bot;
+import org.bdd.cafeyike.commander.commands.Cog;
+import org.bdd.cafeyike.commander.exceptions.ArgumentError;
+import org.bdd.cafeyike.commander.exceptions.BotError;
+import org.bdd.cafeyike.commander.exceptions.UsageError;
+import org.bdd.cafeyike.commander.utils.MsgDeleteAfter;
 import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.MessageBuilder;
 import org.javacord.api.entity.message.component.ActionRow;
@@ -21,15 +28,6 @@ import org.javacord.api.interaction.ButtonInteraction;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-
 public class Yike extends Cog
 {
     private final ConcurrentHashMap<Long, Integer> yikemap;
@@ -38,17 +36,25 @@ public class Yike extends Cog
 
     public Yike()
     {
-        super("YikeCog");
+        super("Yike", "Yike Management");
         yikemap = new ConcurrentHashMap<>();
 
         String input;
-        try
+
+        if(Files.exists(Path.of(CafeYike.YIKE_LOG)))
         {
-            input = Files.readString(Path.of(CafeYike.YIKE_LOG));
+            try
+            {
+                input = Files.readString(Path.of(CafeYike.YIKE_LOG));
+            }
+            catch(IOException e)
+            {
+                throw new BotError("Cannot open Yike Log");
+            }
         }
-        catch(IOException e)
+        else
         {
-            throw new BotError("Cannot open Yike Log");
+            input = "{}";
         }
 
         JSONObject json = null;
@@ -59,12 +65,12 @@ public class Yike extends Cog
         catch(JSONException e)
         {
             //TODO error log
-            System.out.println("Cannot Read Yike Log");
+            System.out.println("Cannot Read Yike Log" + e.getMessage());
         }
 
         if(json != null)
         {
-            for(Iterator<String> it = json.keys(); it.hasNext(); )
+            for(Iterator<String> it = json.keys(); it.hasNext();)
             {
                 String jkey = it.next();
                 long key = Long.parseLong(jkey);
@@ -75,9 +81,10 @@ public class Yike extends Cog
 
         voteTimeSec = Bot.getIntConfig("voteTimeSec");
 
-        addCommand(new Func(new String[] {"yike", "y"}, this::yike));
-        addCommand(new Func(new String[] {"unyike", "uy"}, this::unyike));
-        addCommand(new Func(new String[] {"list", "l"}, this::list));
+        addCommand(new CmdFunc(new String[] {"yike", "y"}, this::yike, "Yike a user", "yike [user]"));
+        addCommand(new CmdFunc(new String[] {"unyike", "uy"}, this::unyike, "Unyike a user", "unyike [user]"));
+        addCommand(new CmdFunc(
+            new String[] {"list", "l"}, this::list, "Show a list of all the yikes", "list <user>"));
     }
 
     public void yike(MessageCreateEvent event, Arguments args)
@@ -89,7 +96,7 @@ public class Yike extends Cog
         }
         catch(ArgumentError e)
         {
-            throw new UsageError();
+            throw new UsageError("yike(): Cannot parse user");
         }
 
         //Either sets a new entry to one or adds 1 to entry
@@ -111,6 +118,12 @@ public class Yike extends Cog
         event.getChannel().sendMessage(nick + " now has " + newval + " yikes");
     }
 
+    @Override
+    public void shutdown()
+    {
+        writeYikeLog();
+    }
+
     private void writeYikeLog()
     {
         JSONObject out = new JSONObject();
@@ -130,7 +143,6 @@ public class Yike extends Cog
             //TODO err
             System.out.println("Cannot Write Yike Log");
         }
-
     }
 
     public void unyike(MessageCreateEvent event, Arguments args)
@@ -142,7 +154,7 @@ public class Yike extends Cog
         }
         catch(ArgumentError e)
         {
-            throw new UsageError();
+            throw new UsageError("unyike(): Cannot parser user");
         }
 
         Integer curVal = yikemap.get(recip.getId());
@@ -167,59 +179,55 @@ public class Yike extends Cog
             }
         }
 
-        Message m = new MessageBuilder().setContent(
-                "The Legion shall decide your fate\nCleanse: 0\nSustain: 0")
-                .addComponents(ActionRow.of(
-                        Button.success("unyike", "Cleanse"),
-                        Button.danger("yike", "Sustain")
-                ))
-                .send(event.getChannel())
-                .join();
+        Message m = new MessageBuilder()
+                        .setContent("The Legion shall decide your fate\nCleanse: 0\nSustain: 0")
+                        .addComponents(ActionRow.of(Button.success("unyike", "Cleanse"),
+                                                    Button.danger("yike", "Sustain")))
+                        .send(event.getChannel())
+                        .join();
 
         //True = unyike, False = yike
         HashMap<Long, Boolean> votemap = new HashMap<>();
         AtomicInteger uyCnt = new AtomicInteger();
         AtomicInteger yCnt = new AtomicInteger();
 
-        m.addButtonClickListener(click ->
-        {
-            ButtonInteraction inter = click.getButtonInteraction();
-            inter.createImmediateResponder().respond();
+        m.addButtonClickListener(click -> {
+             ButtonInteraction inter = click.getButtonInteraction();
+             inter.createImmediateResponder().respond();
 
-            String action = inter.getCustomId();
+             String action = inter.getCustomId();
 
-            User u = inter.getUser();
+             User u = inter.getUser();
 
-            boolean vote = action.equals("unyike");
+             boolean vote = action.equals("unyike");
 
-            Boolean old = votemap.put(u.getId(), vote);
+             Boolean old = votemap.put(u.getId(), vote);
 
-            if(old == null || old != vote)
-            {
-                if(vote)
-                {
-                    uyCnt.incrementAndGet();
-                    if(old != null)
-                    {
-                        yCnt.decrementAndGet();
-                    }
-                }
-                else
-                {
-                    yCnt.incrementAndGet();
-                    if(old != null)
-                    {
-                        uyCnt.decrementAndGet();
-                    }
-                }
-            }
+             if(old == null || old != vote)
+             {
+                 if(vote)
+                 {
+                     uyCnt.incrementAndGet();
+                     if(old != null)
+                     {
+                         yCnt.decrementAndGet();
+                     }
+                 }
+                 else
+                 {
+                     yCnt.incrementAndGet();
+                     if(old != null)
+                     {
+                         uyCnt.decrementAndGet();
+                     }
+                 }
+             }
 
-            m.edit("The Legion shall decide your fate\n" +
-                    "Cleanse: " + uyCnt + "\nSustain: " + yCnt);
-        }).removeAfter(voteTimeSec, TimeUnit.SECONDS);
+             m.edit("The Legion shall decide your fate\n"
+                    + "Cleanse: " + uyCnt + "\nSustain: " + yCnt);
+         }).removeAfter(voteTimeSec, TimeUnit.SECONDS);
 
-        new MsgDeleteAfter(m, voteTimeSec, () ->
-        {
+        new MsgDeleteAfter(m, voteTimeSec, () -> {
             int y = yCnt.get();
             int u = uyCnt.get();
 
@@ -240,21 +248,18 @@ public class Yike extends Cog
             {
                 int newval = curVal - 1;
                 yikemap.put(recip.getId(), newval);
-                event.getChannel().sendMessage(nick +
-                        ", you have been forgiven\nYou now have " + newval + " " +
-                        (newval == 1 ? "yike": "yikes"));
+                event.getChannel().sendMessage(nick + ", you have been forgiven\nYou now have " + newval + " "
+                                               + (newval == 1 ? "yike" : "yikes"));
             }
             else
             {
                 event.getChannel().sendMessage("The yike shall stand");
             }
-
         });
     }
 
     private class YikeEntry implements Comparable<YikeEntry>
     {
-
         public long id;
         public int cnt;
         public String display;
@@ -290,7 +295,7 @@ public class Yike extends Cog
             }
             catch(ArgumentError e)
             {
-                throw new UsageError();
+                throw new UsageError("list(): Cannot parse user");
             }
 
             Integer cnt = yikemap.getOrDefault(u.getId(), 0);
@@ -328,21 +333,14 @@ public class Yike extends Cog
 
             StringBuilder out = new StringBuilder();
 
-            for(YikeEntry e: list)
+            for(YikeEntry e : list)
             {
                 out.append(e.display).append(": ").append(e.cnt).append('\n');
             }
 
-            EmbedBuilder e = new EmbedBuilder().setTitle("Chronicle of Yikes:")
-                    .setDescription(out.toString());
+            EmbedBuilder e = new EmbedBuilder().setTitle("Chronicle of Yikes:").setDescription(out.toString());
 
             event.getChannel().sendMessage(e);
         }
-    }
-
-    @Override
-    public void shutdown()
-    {
-        writeYikeLog();
     }
 }

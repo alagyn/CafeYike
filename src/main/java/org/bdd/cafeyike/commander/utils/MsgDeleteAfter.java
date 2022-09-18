@@ -1,11 +1,12 @@
-package org.bdd.javacordCmd.utils;
+package org.bdd.cafeyike.commander.utils;
 
-import org.bdd.javacordCmd.commands.Cog;
 import org.javacord.api.entity.message.Message;
 
+/**
+ * Helper to automatically delete a message after a time delay and run a specified callback
+ */
 public class MsgDeleteAfter extends Thread
 {
-
     private final Message m;
     private final long s;
     Runnable cb;
@@ -35,15 +36,12 @@ public class MsgDeleteAfter extends Thread
         this.s = sec * 1000;
         this.cb = cb;
 
+        setDaemon(true);
         start();
     }
 
     public MsgDeleteAfter(Message m, long sec)
     {
-        this.m = m;
-        this.s = sec;
-        this.cb = null;
-
-        start();
+        this(m, sec, null);
     }
 }
