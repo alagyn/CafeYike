@@ -1,11 +1,10 @@
 package org.bdd.cafeyike.commander;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.bdd.cafeyike.commander.exceptions.ArgumentError;
 import org.bdd.cafeyike.commander.exceptions.CmdError;
 import org.javacord.api.entity.user.User;
-
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class Arguments
 {
@@ -58,7 +57,6 @@ public class Arguments
             {
                 endChar = '"';
             }
-
         }
 
         while(curIdx < str.length() && curIdx >= 0 && str.charAt(curIdx) != endChar)
@@ -134,9 +132,11 @@ public class Arguments
         return getUser(str);
     }
 
+    /**
+     * Get the rest of the arguments as a string
+     */
     public String remainder()
     {
         return str.substring(curIdx).trim();
     }
-
 }

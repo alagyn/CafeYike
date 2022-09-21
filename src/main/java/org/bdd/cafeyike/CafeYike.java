@@ -1,5 +1,7 @@
 package org.bdd.cafeyike;
 
+import java.sql.SQLException;
+import org.bdd.cafeyike.CafeDB;
 import org.bdd.cafeyike.commander.Bot;
 import org.bdd.cafeyike.commander.exceptions.BotError;
 import org.bdd.cafeyike.commands.Admin;
@@ -9,17 +11,6 @@ import org.javacord.api.entity.intent.Intent;
 
 public class CafeYike
 {
-    private static final class ShutdownThread extends Thread
-    {
-        @Override
-        public void run()
-        {
-            Bot.inst.logInfo("Shutting down");
-            Bot.inst.shutdown();
-            System.exit(0);
-        }
-    }
-
     private static final Intent[] intents = {Intent.GUILD_MEMBERS,
                                              Intent.GUILDS,
                                              Intent.GUILD_MESSAGES,
@@ -34,15 +25,35 @@ public class CafeYike
     {
         Bot bot = Bot.inst;
 
-        System.out.println("Loading Commands");
+        bot.logInfo("Initializing Database");
+
+        CafeDB db = CafeDB.inst;
+        try
+        {
+            db.init();
+        }
+        catch(SQLException e)
+        {
+            bot.logErr("Unable to start database:");
+            bot.logErr(e.getMessage());
+            e.printStackTrace();
+            bot.logErr(e.getSQLState());
+            System.exit(-1);
+        }
+        catch(Exception e)
+        {
+            bot.logErr("Unable to start database:");
+            bot.logErr(e.getMessage());
+            e.printStackTrace();
+            System.exit(-1);
+        }
+
+        bot.logInfo("Loading Commands");
         bot.addCog(new Yike());
         bot.addCog(new Admin());
         bot.addCog(new ButtonTest());
 
-        System.out.println("Initializing Interrupts");
-        //Runtime.getRuntime().addShutdownHook(new ShutdownThread());
-
-        System.out.println("Initializing Bot");
+        bot.logInfo("Initializing Bot");
         try
         {
             bot.init("_", intents);
@@ -52,6 +63,6 @@ public class CafeYike
             botError.printStackTrace();
         }
 
-        System.out.println("Done");
+        bot.logInfo("Bot Online");
     }
 }

@@ -7,7 +7,10 @@ import org.bdd.cafeyike.commander.exceptions.CmdError;
 import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.MessageBuilder;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
+import org.javacord.api.event.interaction.InteractionCreateEvent;
 import org.javacord.api.event.message.MessageCreateEvent;
+import org.javacord.api.interaction.SlashCommand;
+import org.javacord.api.interaction.SlashCommandInteraction;
 
 public class HelpCommand extends Command
 {
@@ -29,18 +32,19 @@ public class HelpCommand extends Command
     @Override
     public String getHelp(boolean showAdmin, boolean showBotOwner)
     {
-        return "help: Shows this help message";
+        return "Shows this help message";
     }
 
     @Override
     public String getUsage()
     {
-        return "na";
+        return "";
     }
 
     @Override
-    public void call(MessageCreateEvent event, Arguments args) throws CmdError
+    public void call(InteractionCreateEvent event, Arguments args) throws CmdError
     {
+        SlashCommandInteraction i = event.getSlashCommandInteraction().get();
         boolean showAdmin = false;
         boolean showBotOwner = false;
         String command = "";
@@ -68,19 +72,17 @@ public class HelpCommand extends Command
             command = arg;
         }
 
-        String out;
+        MessageBuilder msg = new MessageBuilder();
+
         if(command.isEmpty())
         {
-            out = cl.getHelp(showAdmin, showBotOwner);
+            msg.addEmbed(cl.getHelp(showAdmin, showBotOwner));
         }
         else
         {
-            out = cl.getUsage(command, showAdmin, showBotOwner);
+            msg.addEmbed(new EmbedBuilder().addField(command, cl.getUsage(command, showAdmin, showBotOwner)));
         }
 
-        MessageBuilder msg = new MessageBuilder();
-
-        msg.addEmbed(new EmbedBuilder().addField("ASDF", out));
         Message m = msg.replyTo(event.getMessage()).send(event.getChannel()).join();
 
         new MsgDeleteAfter(m, 60);

@@ -1,90 +1,41 @@
 package org.bdd.cafeyike.commands;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.bdd.cafeyike.CafeYike;
+import org.bdd.cafeyike.CafeDB;
 import org.bdd.cafeyike.commander.Arguments;
 import org.bdd.cafeyike.commander.Bot;
 import org.bdd.cafeyike.commander.commands.Cog;
 import org.bdd.cafeyike.commander.exceptions.ArgumentError;
-import org.bdd.cafeyike.commander.exceptions.BotError;
+import org.bdd.cafeyike.commander.exceptions.CmdError;
 import org.bdd.cafeyike.commander.exceptions.UsageError;
 import org.bdd.cafeyike.commander.utils.MsgDeleteAfter;
 import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.MessageBuilder;
 import org.javacord.api.entity.message.component.ActionRow;
 import org.javacord.api.entity.message.component.Button;
-import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.entity.server.Server;
 import org.javacord.api.entity.user.User;
 import org.javacord.api.event.message.MessageCreateEvent;
 import org.javacord.api.interaction.ButtonInteraction;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 public class Yike extends Cog
 {
-    private final ConcurrentHashMap<Long, Integer> yikemap;
-
     private final int voteTimeSec;
 
     public Yike()
     {
         super("Yike", "Yike Management");
-        yikemap = new ConcurrentHashMap<>();
-
-        String input;
-
-        if(Files.exists(Path.of(CafeYike.YIKE_LOG)))
-        {
-            try
-            {
-                input = Files.readString(Path.of(CafeYike.YIKE_LOG));
-            }
-            catch(IOException e)
-            {
-                throw new BotError("Cannot open Yike Log");
-            }
-        }
-        else
-        {
-            input = "{}";
-        }
-
-        JSONObject json = null;
-        try
-        {
-            json = new JSONObject(input);
-        }
-        catch(JSONException e)
-        {
-            //TODO error log
-            System.out.println("Cannot Read Yike Log" + e.getMessage());
-        }
-
-        if(json != null)
-        {
-            for(Iterator<String> it = json.keys(); it.hasNext();)
-            {
-                String jkey = it.next();
-                long key = Long.parseLong(jkey);
-
-                yikemap.put(key, json.getInt(jkey));
-            }
-        }
 
         voteTimeSec = Bot.getIntConfig("voteTimeSec");
 
         addCommand(new CmdFunc(new String[] {"yike", "y"}, this::yike, "Yike a user", "yike [user]"));
         addCommand(new CmdFunc(new String[] {"unyike", "uy"}, this::unyike, "Unyike a user", "unyike [user]"));
+        /*
         addCommand(new CmdFunc(
             new String[] {"list", "l"}, this::list, "Show a list of all the yikes", "list <user>"));
+        */
     }
 
     public void yike(MessageCreateEvent event, Arguments args)
@@ -99,21 +50,18 @@ public class Yike extends Cog
             throw new UsageError("yike(): Cannot parse user");
         }
 
-        //Either sets a new entry to one or adds 1 to entry
-        int newval = yikemap.merge(recip.getId(), 1, Integer::sum);
-
         Server serv = event.getServer().orElse(null);
+
+        if(serv == null)
+        {
+            throw new CmdError("Cannot yike outside of a server");
+        }
 
         String nick;
 
-        if(serv != null)
-        {
-            nick = recip.getDisplayName(serv);
-        }
-        else
-        {
-            nick = recip.getName();
-        }
+        int newval = CafeDB.addYike(serv.getId(), recip.getId());
+
+        nick = recip.getDisplayName(serv);
 
         event.getChannel().sendMessage(nick + " now has " + newval + " yikes");
     }
@@ -121,28 +69,7 @@ public class Yike extends Cog
     @Override
     public void shutdown()
     {
-        writeYikeLog();
-    }
-
-    private void writeYikeLog()
-    {
-        JSONObject out = new JSONObject();
-
-        for(Map.Entry<Long, Integer> e : yikemap.entrySet())
-        {
-            out.put(e.getKey().toString(), e.getValue());
-        }
-
-        try
-        {
-            System.out.println("Writing Yike Log");
-            out.write(new FileWriter(CafeYike.YIKE_LOG)).close();
-        }
-        catch(IOException e)
-        {
-            //TODO err
-            System.out.println("Cannot Write Yike Log");
-        }
+        // PAss
     }
 
     public void unyike(MessageCreateEvent event, Arguments args)
@@ -154,10 +81,17 @@ public class Yike extends Cog
         }
         catch(ArgumentError e)
         {
-            throw new UsageError("unyike(): Cannot parser user");
+            throw new UsageError("unyike(): Cannot parse user");
         }
 
-        Integer curVal = yikemap.get(recip.getId());
+        Server serv = event.getServer().orElse(null);
+
+        if(serv == null)
+        {
+            throw new CmdError("Cannot unyike outside a server");
+        }
+
+        Integer curVal = CafeDB.getYikesForUser(serv.getId(), recip.getId());
 
         if(curVal == null || curVal <= 0)
         {
@@ -171,10 +105,9 @@ public class Yike extends Cog
             String opt = args.next();
             if(opt.equals("-a") && event.getMessageAuthor().isServerAdmin())
             {
-                int newval = curVal - 1;
-                yikemap.put(recip.getId(), newval);
+                int newVal = CafeDB.remYike(serv.getId(), recip.getId());
                 //TODO message
-                event.getChannel().sendMessage("Yike removed");
+                event.getChannel().sendMessage("Yike removed, count: " + newVal);
                 return;
             }
         }
@@ -231,23 +164,11 @@ public class Yike extends Cog
             int y = yCnt.get();
             int u = uyCnt.get();
 
-            Server serv = event.getServer().orElse(null);
-
-            String nick;
-
-            if(serv != null)
-            {
-                nick = recip.getDisplayName(serv);
-            }
-            else
-            {
-                nick = recip.getName();
-            }
+            String nick = recip.getDisplayName(serv);
 
             if(u - 1 > y)
             {
-                int newval = curVal - 1;
-                yikemap.put(recip.getId(), newval);
+                int newval = CafeDB.remYike(serv.getId(), recip.getId());
                 event.getChannel().sendMessage(nick + ", you have been forgiven\nYou now have " + newval + " "
                                                + (newval == 1 ? "yike" : "yikes"));
             }
@@ -258,32 +179,7 @@ public class Yike extends Cog
         });
     }
 
-    private class YikeEntry implements Comparable<YikeEntry>
-    {
-        public long id;
-        public int cnt;
-        public String display;
-
-        public YikeEntry(long id, int cnt, String display)
-        {
-            this.id = id;
-            this.cnt = cnt;
-            this.display = display;
-        }
-
-        @Override
-        public int compareTo(YikeEntry o)
-        {
-            int out = Integer.compare(cnt, o.cnt) * -1;
-            if(out == 0)
-            {
-                out = display.compareTo(o.display);
-            }
-
-            return out;
-        }
-    }
-
+    /*
     public void list(MessageCreateEvent event, Arguments args)
     {
         if(args.hasNext())
@@ -343,4 +239,5 @@ public class Yike extends Cog
             event.getChannel().sendMessage(e);
         }
     }
+    */
 }

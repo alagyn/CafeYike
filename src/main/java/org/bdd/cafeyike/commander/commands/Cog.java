@@ -4,6 +4,7 @@ import java.util.LinkedList;
 import java.util.function.BiConsumer;
 import org.bdd.cafeyike.commander.Arguments;
 import org.bdd.cafeyike.commander.exceptions.CmdError;
+import org.javacord.api.event.interaction.InteractionCreateEvent;
 import org.javacord.api.event.message.MessageCreateEvent;
 
 /**
@@ -62,15 +63,9 @@ public abstract class Cog
         }
 
         @Override
-        public void call(MessageCreateEvent event, Arguments args) throws CmdError
+        public void call(InteractionCreateEvent event, Arguments args) throws CmdError
         {
             cmd.accept(event, args);
-        }
-
-        @Override
-        public void shutdown()
-        {
-            // Pass?
         }
 
         @Override
@@ -82,9 +77,7 @@ public abstract class Cog
         @Override
         public String getHelp(boolean showAdmin, boolean showBotOwner)
         {
-            StringBuilder out = new StringBuilder();
-            out.append(aliases[0]).append(": ").append(descr);
-            return out.toString();
+            return descr;
         }
 
         @Override
@@ -115,21 +108,17 @@ public abstract class Cog
         return commands;
     }
 
-    /*
-    @Override
     public final String getHelp(boolean showAdmin, boolean showBotOwner)
     {
         StringBuilder cmdOut = new StringBuilder();
-        for(String name : defaultNames)
+        for(Command f : commands)
         {
-            Func f = commands.get(name);
             if((!showAdmin && f.adminOnly) || (!showBotOwner && f.botOwnerOnly))
             {
                 continue;
             }
 
-            cmdOut.append("\t").append(name).append(": ");
-            cmdOut.append(f.getDescr()).append("\n");
+            cmdOut.append(f.getAliases()[0]).append(": ").append(f.getHelp(showAdmin, showBotOwner)).append("\n");
         }
 
         if(cmdOut.length() == 0)
@@ -137,14 +126,8 @@ public abstract class Cog
             return "";
         }
 
-        StringBuilder out = new StringBuilder();
-
-        out.append(cogName).append(": ").append(cogBrief).append("\n");
-        out.append(cmdOut);
-
-        return out.toString();
+        return cmdOut.toString();
     }
-    */
 
     public abstract void shutdown();
 }

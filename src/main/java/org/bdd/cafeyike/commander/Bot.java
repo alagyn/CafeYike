@@ -130,4 +130,13 @@ public class Bot
     {
         System.out.println(x);
     }
+
+    public void logErr(String x)
+    {
+        System.out.print((char)27);
+        System.out.print("[31m");
+        System.out.print(x);
+        System.out.print((char)27);
+        System.out.println("[0m");
+    }
 }
