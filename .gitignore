@@ -1,3 +1,5 @@
+deprecated
+
 # Compiled class file
 *.class
 
@@ -8,7 +10,6 @@
 *.ctxt
 
 .settings
-*.code-workspace
 .vscode
 
 target

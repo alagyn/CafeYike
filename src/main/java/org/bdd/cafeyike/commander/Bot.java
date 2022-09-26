@@ -2,15 +2,20 @@ package org.bdd.cafeyike.commander;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.LinkedList;
 import java.util.Properties;
-import org.bdd.cafeyike.commander.commands.Cog;
-import org.bdd.cafeyike.commander.commands.Command;
 import org.bdd.cafeyike.commander.exceptions.BotError;
+import org.bdd.cafeyike.commander.exceptions.UsageError;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
 import org.javacord.api.entity.intent.Intent;
-import org.javacord.api.listener.message.MessageCreateListener;
+import org.javacord.api.entity.message.MessageFlag;
+import org.javacord.api.entity.message.embed.EmbedBuilder;
+import org.javacord.api.entity.server.Server;
+import org.javacord.api.entity.user.User;
+import org.javacord.api.entity.user.UserStatus;
+import org.javacord.api.interaction.Interaction;
+import org.javacord.api.interaction.SlashCommandInteraction;
+import org.javacord.api.listener.interaction.InteractionCreateListener;
 import org.javacord.api.util.event.ListenerManager;
 
 public class Bot
@@ -24,7 +29,7 @@ public class Bot
     private final DiscordApiBuilder temp_builder;
 
     private CommandListener cl = null;
-    ListenerManager<MessageCreateListener> listenManager;
+    ListenerManager<InteractionCreateListener> listenManager;
 
     private Bot()
     {
@@ -55,11 +60,6 @@ public class Bot
         return Integer.parseInt(inst.config.getProperty(key));
     }
 
-    public void addCommand(Command command)
-    {
-        cl.addCommand(command);
-    }
-
     public void addCog(Cog cog)
     {
         cl.addCog(cog);
@@ -78,9 +78,9 @@ public class Bot
 
         api = temp_builder.login().join();
 
-        cl.setPrefix(prefix);
+        cl.registerCommands(api);
 
-        listenManager = api.addMessageCreateListener(cl);
+        listenManager = api.addInteractionCreateListener(cl);
 
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run()
@@ -109,6 +109,7 @@ public class Bot
     {
         logInfo("Shutting down Command Listener");
         cl.shutdown();
+        api.updateStatus(UserStatus.OFFLINE);
         logInfo("Exitting");
     }
 
@@ -138,5 +139,43 @@ public class Bot
         System.out.print(x);
         System.out.print((char)27);
         System.out.println("[0m");
+    }
+
+    public static String getNickname(User user, Server serv)
+    {
+        if(serv == null)
+        {
+            return user.getName();
+        }
+
+        return user.getDisplayName(serv);
+    }
+
+    public static void sendError(Interaction event, String message)
+    {
+        event.createImmediateResponder()
+            .addEmbed(new EmbedBuilder().addField("Error", message))
+            .setFlags(MessageFlag.EPHEMERAL)
+            .respond();
+        throw new UsageError(message);
+    }
+
+    public static void sendError(SlashCommandInteraction event, String message)
+    {
+        sendError((Interaction)event, message);
+    }
+
+    public static void sendFollowError(Interaction event, String message)
+    {
+        event.createFollowupMessageBuilder()
+            .addEmbed(new EmbedBuilder().addField("Error", message))
+            .setFlags(MessageFlag.EPHEMERAL)
+            .send();
+        throw new UsageError(message);
+    }
+
+    public static void sendFollowError(SlashCommandInteraction event, String message)
+    {
+        sendFollowError((Interaction)event, message);
     }
 }

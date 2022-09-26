@@ -4,21 +4,25 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.bdd.cafeyike.CafeDB;
-import org.bdd.cafeyike.commander.Arguments;
+import org.bdd.cafeyike.CafeDB.YikeEntry;
 import org.bdd.cafeyike.commander.Bot;
-import org.bdd.cafeyike.commander.commands.Cog;
-import org.bdd.cafeyike.commander.exceptions.ArgumentError;
-import org.bdd.cafeyike.commander.exceptions.CmdError;
-import org.bdd.cafeyike.commander.exceptions.UsageError;
-import org.bdd.cafeyike.commander.utils.MsgDeleteAfter;
+import org.bdd.cafeyike.commander.Cog;
+import org.bdd.cafeyike.commander.utils.DoAfter;
 import org.javacord.api.entity.message.Message;
-import org.javacord.api.entity.message.MessageBuilder;
 import org.javacord.api.entity.message.component.ActionRow;
 import org.javacord.api.entity.message.component.Button;
+import org.javacord.api.entity.message.embed.EmbedBuilder;
+import org.javacord.api.entity.permission.PermissionType;
+import org.javacord.api.entity.permission.Role;
 import org.javacord.api.entity.server.Server;
 import org.javacord.api.entity.user.User;
-import org.javacord.api.event.message.MessageCreateEvent;
 import org.javacord.api.interaction.ButtonInteraction;
+import org.javacord.api.interaction.SlashCommand;
+import org.javacord.api.interaction.SlashCommandBuilder;
+import org.javacord.api.interaction.SlashCommandInteraction;
+import org.javacord.api.interaction.SlashCommandOption;
+import org.javacord.api.interaction.SlashCommandOptionType;
+import org.javacord.api.interaction.callback.InteractionOriginalResponseUpdater;
 
 public class Yike extends Cog
 {
@@ -26,44 +30,35 @@ public class Yike extends Cog
 
     public Yike()
     {
-        super("Yike", "Yike Management");
-
         voteTimeSec = Bot.getIntConfig("voteTimeSec");
-
-        addCommand(new CmdFunc(new String[] {"yike", "y"}, this::yike, "Yike a user", "yike [user]"));
-        addCommand(new CmdFunc(new String[] {"unyike", "uy"}, this::unyike, "Unyike a user", "unyike [user]"));
-        /*
-        addCommand(new CmdFunc(
-            new String[] {"list", "l"}, this::list, "Show a list of all the yikes", "list <user>"));
-        */
     }
 
-    public void yike(MessageCreateEvent event, Arguments args)
+    public void yike(SlashCommandInteraction interaction)
     {
-        User recip;
-        try
+        User recip = interaction.getOptionUserValueByIndex(0).get();
+
+        if(recip == null)
         {
-            recip = args.nextUser();
-        }
-        catch(ArgumentError e)
-        {
-            throw new UsageError("yike(): Cannot parse user");
+            Bot.sendError(interaction, "Cannot unyike user");
         }
 
-        Server serv = event.getServer().orElse(null);
+        Server serv = interaction.getServer().get();
 
         if(serv == null)
         {
-            throw new CmdError("Cannot yike outside of a server");
+            Bot.sendError(interaction, "Cannot yike outside of a server");
         }
 
         String nick;
+
+        interaction.respondLater();
 
         int newval = CafeDB.addYike(serv.getId(), recip.getId());
 
         nick = recip.getDisplayName(serv);
 
-        event.getChannel().sendMessage(nick + " now has " + newval + " yikes");
+        interaction.createFollowupMessageBuilder()
+                .addEmbed(new EmbedBuilder().addField("Yike", nick + " now has " + newval + " yikes")).send();
     }
 
     @Override
@@ -72,172 +67,212 @@ public class Yike extends Cog
         // PAss
     }
 
-    public void unyike(MessageCreateEvent event, Arguments args)
+    private EmbedBuilder unyikeMessage(int up, int down)
     {
-        User recip;
-        try
+        return new EmbedBuilder().addField("Un-Yike",
+                "The Legion shall decide your fate\nCleanse: " + up + "\nSustain: " + down);
+    }
+
+    public void unyike(SlashCommandInteraction event)
+    {
+        User recip = event.getOptionUserValueByIndex(0).get();
+        if(recip == null)
         {
-            recip = args.nextUser();
+            Bot.sendError(event, "Cannot unyike user");
         }
-        catch(ArgumentError e)
+
+        Server serv = event.getServer().get();
+
+        if(serv == null)
         {
-            throw new UsageError("unyike(): Cannot parse user");
+            Bot.sendError(event, "Cannot unyike outside a server");
         }
+
+        int curVal = CafeDB.getYikesForUser(serv.getId(), recip.getId());
+
+        if(curVal <= 0)
+        {
+            Bot.sendError(event, "No negative yikes allowed");
+        }
+
+        Boolean requestAdmin = event.getOptionBooleanValueByIndex(1).orElse(false);
+
+        if(requestAdmin)
+        {
+            Role r = event.getUser().getRoles(serv).get(0);
+            Bot.inst.logDbg(r.toString());
+            if(event.getUser().getRoles(serv).get(0).getPermissions().getAllowedPermission()
+                    .contains(PermissionType.ADMINISTRATOR))
+            {
+                int newVal = CafeDB.remYike(serv.getId(), recip.getId());
+                event.createFollowupMessageBuilder().addEmbed(new EmbedBuilder().addField("Admin Un-Yike",
+                        Bot.getNickname(recip, serv) + " now has " + newVal + " yikes.")).send();
+                return;
+            }
+
+            Bot.sendError(event, "You must be an admin to use the admin flag");
+        }
+
+        InteractionOriginalResponseUpdater updater = event.createImmediateResponder().addEmbed(unyikeMessage(0, 0))
+                .addComponents(ActionRow.of(Button.success("unyike", "Cleanse"), Button.danger("yike", "Sustain")))
+                .respond().join();
+
+        Message m = updater.update().join();
+
+        // True = unyike, False = yike
+        HashMap<Long, Boolean> votemap = new HashMap<>();
+        AtomicInteger upvotes = new AtomicInteger(0);
+        AtomicInteger downvotes = new AtomicInteger(0);
+
+        m.addButtonClickListener(click ->
+        {
+            ButtonInteraction inter = click.getButtonInteraction();
+            String action = inter.getCustomId();
+            inter.acknowledge();
+
+            User u = inter.getUser();
+
+            boolean vote = action.equals("unyike");
+
+            Boolean old = votemap.put(u.getId(), vote);
+
+            if(old == null || old != vote)
+            {
+                synchronized(updater)
+                {
+                    int up, down;
+                    // If unyike
+                    if(vote)
+                    {
+                        up = upvotes.incrementAndGet();
+                        if(old != null)
+                        {
+                            down = downvotes.decrementAndGet();
+                        }
+                        else
+                        {
+                            down = downvotes.get();
+                        }
+                    }
+                    // Else yike
+                    else
+                    {
+                        down = downvotes.incrementAndGet();
+                        if(old != null)
+                        {
+                            up = upvotes.decrementAndGet();
+                        }
+                        else
+                        {
+                            up = upvotes.get();
+                        }
+                    }
+                    updater.removeAllEmbeds().addEmbed(unyikeMessage(up, down)).update();
+                }
+            }
+        }).removeAfter(voteTimeSec, TimeUnit.SECONDS);
+
+        new DoAfter(voteTimeSec, x ->
+        {
+            synchronized(updater)
+            {
+                String nick = recip.getDisplayName(serv);
+
+                // Don't Remove all embeds
+
+                if(upvotes.get() - 1 > downvotes.get())
+                {
+                    int newval = CafeDB.remYike(serv.getId(), recip.getId());
+                    updater.addEmbed(
+                            new EmbedBuilder().addField("Un-Yike", nick + ", you have been forgiven\nYou now have "
+                                    + newval + " " + (newval == 1 ? "yike" : "yikes")));
+                }
+                else
+                {
+                    updater.addEmbed(new EmbedBuilder().addField("Un-Yike", "The yike shall stand"));
+                }
+
+                updater.removeAllComponents().update();
+            }
+        });
+    }
+
+    @Override
+    public List<SlashCommandBuilder> buildCommands()
+    {
+        LinkedList<SlashCommandBuilder> out = new LinkedList<>();
+
+        out.add(SlashCommand.with("yike", "Give a user a yike")
+                .addOption(SlashCommandOption.create(SlashCommandOptionType.USER, "user", "The yike recipient", true)));
+
+        registerCmdFunc(this::yike, "yike");
+
+        out.add(SlashCommand.with("unyike", "Remove a yike from a user")
+                .addOption(SlashCommandOption.create(SlashCommandOptionType.USER, "user",
+                        "The user from which to remove a yike", true))
+                .addOption(SlashCommandOption.create(SlashCommandOptionType.BOOLEAN, "admin",
+                        "Admin flag to skip voting", false)));
+
+        registerCmdFunc(this::unyike, "unyike");
+
+        out.add(SlashCommand.with("list", "List the yikes for users in this server")
+                .addOption(SlashCommandOption.create(SlashCommandOptionType.USER, "user", "List for a specific user")));
+
+        registerCmdFunc(this::list, "list");
+
+        return out;
+    }
+
+    public void list(SlashCommandInteraction event)
+    {
+        User user = event.getOptionUserValueByIndex(0).orElse(null);
 
         Server serv = event.getServer().orElse(null);
 
         if(serv == null)
         {
-            throw new CmdError("Cannot unyike outside a server");
+            Bot.sendError(event, "Cannot get yikes outside a server");
         }
 
-        Integer curVal = CafeDB.getYikesForUser(serv.getId(), recip.getId());
-
-        if(curVal == null || curVal <= 0)
+        if(user != null)
         {
-            //TODO response msg
-            event.getChannel().sendMessage("No negative yikes allowed");
-            return;
-        }
+            int cnt = CafeDB.getYikesForUser(serv.getId(), user.getId());
 
-        if(args.hasNext())
-        {
-            String opt = args.next();
-            if(opt.equals("-a") && event.getMessageAuthor().isServerAdmin())
-            {
-                int newVal = CafeDB.remYike(serv.getId(), recip.getId());
-                //TODO message
-                event.getChannel().sendMessage("Yike removed, count: " + newVal);
-                return;
-            }
-        }
+            String nick = user.getDisplayName(serv);
 
-        Message m = new MessageBuilder()
-                        .setContent("The Legion shall decide your fate\nCleanse: 0\nSustain: 0")
-                        .addComponents(ActionRow.of(Button.success("unyike", "Cleanse"),
-                                                    Button.danger("yike", "Sustain")))
-                        .send(event.getChannel())
-                        .join();
-
-        //True = unyike, False = yike
-        HashMap<Long, Boolean> votemap = new HashMap<>();
-        AtomicInteger uyCnt = new AtomicInteger();
-        AtomicInteger yCnt = new AtomicInteger();
-
-        m.addButtonClickListener(click -> {
-             ButtonInteraction inter = click.getButtonInteraction();
-             inter.createImmediateResponder().respond();
-
-             String action = inter.getCustomId();
-
-             User u = inter.getUser();
-
-             boolean vote = action.equals("unyike");
-
-             Boolean old = votemap.put(u.getId(), vote);
-
-             if(old == null || old != vote)
-             {
-                 if(vote)
-                 {
-                     uyCnt.incrementAndGet();
-                     if(old != null)
-                     {
-                         yCnt.decrementAndGet();
-                     }
-                 }
-                 else
-                 {
-                     yCnt.incrementAndGet();
-                     if(old != null)
-                     {
-                         uyCnt.decrementAndGet();
-                     }
-                 }
-             }
-
-             m.edit("The Legion shall decide your fate\n"
-                    + "Cleanse: " + uyCnt + "\nSustain: " + yCnt);
-         }).removeAfter(voteTimeSec, TimeUnit.SECONDS);
-
-        new MsgDeleteAfter(m, voteTimeSec, () -> {
-            int y = yCnt.get();
-            int u = uyCnt.get();
-
-            String nick = recip.getDisplayName(serv);
-
-            if(u - 1 > y)
-            {
-                int newval = CafeDB.remYike(serv.getId(), recip.getId());
-                event.getChannel().sendMessage(nick + ", you have been forgiven\nYou now have " + newval + " "
-                                               + (newval == 1 ? "yike" : "yikes"));
-            }
-            else
-            {
-                event.getChannel().sendMessage("The yike shall stand");
-            }
-        });
-    }
-
-    /*
-    public void list(MessageCreateEvent event, Arguments args)
-    {
-        if(args.hasNext())
-        {
-            User u;
-            try
-            {
-                u = args.nextUser();
-            }
-            catch(ArgumentError e)
-            {
-                throw new UsageError("list(): Cannot parse user");
-            }
-
-            Integer cnt = yikemap.getOrDefault(u.getId(), 0);
-
-            String nick = u.getDisplayName(event.getServer().orElse(null));
-
-            //TODO message format
+            // TODO message format
             String x = cnt != 1 ? " yikes." : " yike.";
-            event.getChannel().sendMessage(nick + " has " + cnt + x);
-            //TOCHANGE add a delete btn?
+            event.createImmediateResponder()
+                    .addEmbed(new EmbedBuilder().addField("Chronicle of Yikes:", nick + " has " + cnt + x)).respond();
+
             return;
         }
 
-        Server s = event.getServer().orElse(null);
+        event.respondLater();
 
-        if(s != null)
+        List<CafeDB.YikeEntry> list = CafeDB.getYikesForServer(serv.getId());
+
+        Collections.sort(list);
+
+        StringBuilder out = new StringBuilder();
+
+        for(int i = 0; i < 15 && i < list.size(); ++i)
         {
-            Collection<User> m = s.getMembers();
-
-            ArrayList<YikeEntry> list = new ArrayList<>(m.size());
-
-            for(User u : m)
+            YikeEntry e = list.get(i);
+            if(e.count <= 0)
             {
-                long id = u.getId();
-                Integer cnt = yikemap.getOrDefault(id, 0);
-                String d = u.getDisplayName(s);
-
-                if(cnt > 0)
-                {
-                    list.add(new YikeEntry(id, cnt, d));
-                }
+                break;
             }
 
-            Collections.sort(list);
-
-            StringBuilder out = new StringBuilder();
-
-            for(YikeEntry e : list)
+            User u = serv.getMemberById(e.ID).orElse(null);
+            if(u == null)
             {
-                out.append(e.display).append(": ").append(e.cnt).append('\n');
+                continue;
             }
-
-            EmbedBuilder e = new EmbedBuilder().setTitle("Chronicle of Yikes:").setDescription(out.toString());
-
-            event.getChannel().sendMessage(e);
+            out.append(u.getDisplayName(serv)).append(": ").append(e.count).append("\n");
         }
+
+        event.createFollowupMessageBuilder()
+                .addEmbed(new EmbedBuilder().setTitle("Chronicle of Yikes:").setDescription(out.toString())).send();
     }
-    */
 }

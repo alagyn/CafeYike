@@ -1,22 +1,27 @@
 package org.bdd.cafeyike.commands;
 
-import org.bdd.cafeyike.commander.Arguments;
+import java.util.List;
 import org.bdd.cafeyike.commander.Bot;
-import org.bdd.cafeyike.commander.commands.Cog;
-import org.javacord.api.event.message.MessageCreateEvent;
+import org.bdd.cafeyike.commander.Cog;
+import org.javacord.api.entity.message.MessageFlag;
+import org.javacord.api.entity.message.embed.EmbedBuilder;
+import org.javacord.api.interaction.SlashCommandBuilder;
+import org.javacord.api.interaction.SlashCommandInteraction;
 
 public class Admin extends Cog
 {
     public Admin()
     {
-        super("Admin", "Admin Commands");
-
-        addCommand(new CmdFunc(new String[] {"logout", "lo"}, this::logout, "logout", "", false, true));
     }
 
-    public void logout(MessageCreateEvent event, Arguments args)
+    public void logout(SlashCommandInteraction interaction)
     {
-        if(event.getMessageAuthor().isBotOwner())
+        interaction.createImmediateResponder()
+            .addEmbed(new EmbedBuilder().addField("Done", "Done"))
+            .setFlags(MessageFlag.EPHEMERAL)
+            .respond()
+            .join();
+        if(interaction.getUser().isBotOwner())
         {
             Bot.inst.shutdown();
         }
@@ -26,5 +31,11 @@ public class Admin extends Cog
     public void shutdown()
     {
         // Pass
+    }
+
+    @Override
+    public List<SlashCommandBuilder> buildCommands()
+    {
+        return null;
     }
 }

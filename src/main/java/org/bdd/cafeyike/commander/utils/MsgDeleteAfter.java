@@ -8,14 +8,14 @@ import org.javacord.api.entity.message.Message;
 public class MsgDeleteAfter extends Thread
 {
     private final Message m;
-    private final long s;
+    private final long millis;
     Runnable cb;
 
     public void run()
     {
         try
         {
-            Thread.sleep(s);
+            Thread.sleep(millis);
         }
         catch(InterruptedException e)
         {
@@ -33,7 +33,7 @@ public class MsgDeleteAfter extends Thread
     public MsgDeleteAfter(Message m, long sec, Runnable cb)
     {
         this.m = m;
-        this.s = sec * 1000;
+        this.millis = sec * 1000;
         this.cb = cb;
 
         setDaemon(true);

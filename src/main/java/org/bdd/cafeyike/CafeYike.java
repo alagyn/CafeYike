@@ -1,11 +1,10 @@
 package org.bdd.cafeyike;
 
 import java.sql.SQLException;
-import org.bdd.cafeyike.CafeDB;
 import org.bdd.cafeyike.commander.Bot;
 import org.bdd.cafeyike.commander.exceptions.BotError;
-import org.bdd.cafeyike.commands.Admin;
 import org.bdd.cafeyike.commands.ButtonTest;
+import org.bdd.cafeyike.commands.Quote;
 import org.bdd.cafeyike.commands.Yike;
 import org.javacord.api.entity.intent.Intent;
 
@@ -50,7 +49,8 @@ public class CafeYike
 
         bot.logInfo("Loading Commands");
         bot.addCog(new Yike());
-        bot.addCog(new Admin());
+        bot.addCog(new Quote());
+        //bot.addCog(new Admin());
         bot.addCog(new ButtonTest());
 
         bot.logInfo("Initializing Bot");

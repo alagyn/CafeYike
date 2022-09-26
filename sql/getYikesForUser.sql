@@ -1,3 +1,3 @@
-UPDATE yikes
-SET count = ?
+SELECT count
+FROM yikes
 WHERE guild_id=? AND user_id=?

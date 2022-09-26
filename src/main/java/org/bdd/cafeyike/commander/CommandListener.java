@@ -2,145 +2,94 @@ package org.bdd.cafeyike.commander;
 
 import java.util.HashMap;
 import java.util.LinkedList;
-import org.bdd.cafeyike.commander.commands.Cog;
-import org.bdd.cafeyike.commander.commands.Command;
 import org.bdd.cafeyike.commander.exceptions.CmdError;
-import org.bdd.cafeyike.commander.exceptions.CmdNotFoundError;
-import org.bdd.cafeyike.commander.utils.HelpCommand;
+import org.bdd.cafeyike.commander.exceptions.UsageError;
+import org.javacord.api.DiscordApi;
+import org.javacord.api.entity.message.MessageFlag;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
-import org.javacord.api.event.message.MessageCreateEvent;
-import org.javacord.api.listener.message.MessageCreateListener;
+import org.javacord.api.event.interaction.InteractionCreateEvent;
+import org.javacord.api.interaction.AutocompleteInteraction;
+import org.javacord.api.interaction.Interaction;
+import org.javacord.api.interaction.InteractionType;
+import org.javacord.api.interaction.SlashCommandBuilder;
+import org.javacord.api.interaction.SlashCommandInteraction;
+import org.javacord.api.listener.interaction.InteractionCreateListener;
 
-public class CommandListener implements MessageCreateListener
+public class CommandListener implements InteractionCreateListener
 {
-    public String prefix;
-    private HashMap<String, Command> commands = new HashMap<>();
+    private HashMap<String, Cmd> commands = new HashMap<>();
     private LinkedList<Cog> cogs = new LinkedList<>();
-    private LinkedList<String> uncatCmds = new LinkedList<>();
 
-    public CommandListener() throws CmdError
+    public CommandListener()
     {
-        this.prefix = "";
-
-        addCommand(new HelpCommand(this));
-    }
-
-    public void setPrefix(String prefix)
-    {
-        this.prefix = prefix;
-    }
-
-    private void insertCmd(Command c)
-    {
-        for(String alias : c.getAliases())
-        {
-            commands.put(alias, c);
-        }
-    }
-
-    public void addCommand(Command c) throws CmdError
-    {
-        uncatCmds.add(c.getAliases()[0]);
-        insertCmd(c);
     }
 
     public void addCog(Cog cog)
     {
         cogs.add(cog);
-        for(Command c : cog.getCommands())
-        {
-            insertCmd(c);
-        }
     }
 
     @Override
-    public void onMessageCreate(MessageCreateEvent event)
+    public void onInteractionCreate(InteractionCreateEvent event)
     {
-        //Ignore messages from ourselves
-        if(event.getMessageAuthor().isYourself())
+        Interaction i = event.getInteraction();
+
+        InteractionType type = i.getType();
+
+        switch(type)
+        {
+        case APPLICATION_COMMAND:
+            runCommand(i.asSlashCommandInteraction().get());
+            break;
+        case APPLICATION_COMMAND_AUTOCOMPLETE:
+            runCommandAutocomplete(i.asAutocompleteInteraction().get());
+            break;
+        default:
+            break;
+        }
+    }
+
+    private void runCommand(SlashCommandInteraction interaction)
+    {
+        if(interaction == null)
         {
             return;
         }
 
-        String content = event.getMessageContent();
+        String commandName = interaction.getCommandName();
+        Bot.inst.logDbg("Got cmd: " + commandName);
+        Cmd c = commands.get(commandName);
 
-        // TODO remove
-        System.out.println("\"" + content + "\"");
-        //
-
-        if(content.startsWith(prefix))
+        if(c == null)
         {
-            //TODO remove
-            System.out.println("Running Command");
-            //
+            interaction.createImmediateResponder()
+                .addEmbed(new EmbedBuilder().addField("Error", "Command \"" + commandName + "\" not found"))
+                .setFlags(MessageFlag.EPHEMERAL)
+                .respond();
+            return;
+        }
 
-            Arguments args = new Arguments(content.substring(prefix.length()));
-            if(!args.hasNext())
-            {
-                event.getChannel().sendMessage("No command specified");
-                return;
-            }
-
-            String commandName = args.next();
-            Command c = commands.get(commandName);
-
-            if(c == null)
-            {
-                event.getChannel().sendMessage("Command \"" + commandName + "\" not found");
-                return;
-            }
-            try
-            {
-                c.call(event, args);
-            }
-            catch(CmdNotFoundError e)
-            {
-                event.getChannel().sendMessage("Command \"" + commandName + "\" not found");
-            }
-            catch(CmdError e)
-            {
-                //TODO better message?
-                event.getChannel().sendMessage(e.getMessage());
-                System.out.println("CommandListener:onMessageCreate() Error Caught, Stacktrace:");
-                e.printStackTrace();
-            }
+        try
+        {
+            c.func.accept(interaction);
+        }
+        catch(UsageError e)
+        {
+            // Pass
+        }
+        catch(CmdError e)
+        {
+            System.out.println("CommandListener:runCommand() Error Caught, Stacktrace:");
+            e.printStackTrace();
         }
     }
 
-    public EmbedBuilder getHelp(boolean showAdmin, boolean showBotOwner)
+    private void runCommandAutocomplete(AutocompleteInteraction interaction)
     {
-        EmbedBuilder out = new EmbedBuilder();
-
-        for(Cog cog : cogs)
+        if(interaction == null)
         {
-            StringBuilder x = new StringBuilder();
-            x.append(cog.cogName).append(": ").append(cog.cogBrief);
-            String cmdHelp = cog.getHelp(showAdmin, showBotOwner);
-            if(!cmdHelp.isEmpty())
-            {
-                out.addField(x.toString(), cog.getHelp(showAdmin, showBotOwner));
-            }
+            return;
         }
-
-        StringBuilder x = new StringBuilder();
-        for(String name : uncatCmds)
-        {
-            Command c = commands.get(name);
-            x.append(c.getHelp(showAdmin, showBotOwner)).append("\n");
-        }
-
-        out.addField("Uncategorized", x.toString());
-
-        return out;
-    }
-
-    public String getUsage(String name, boolean showAdmin, boolean showBotOwner)
-    {
-        StringBuilder out = new StringBuilder();
-        Command c = commands.get(name);
-        out.append(c.getHelp(showAdmin, showBotOwner)).append("\n");
-        out.append(prefix).append(c.getUsage());
-        return out.toString();
     }
 
     public void shutdown()
@@ -149,10 +98,26 @@ public class CommandListener implements MessageCreateListener
         {
             c.shutdown();
         }
+    }
 
-        for(String name : uncatCmds)
+    public void registerCommands(DiscordApi api)
+    {
+        LinkedList<SlashCommandBuilder> toRegister = new LinkedList<>();
+
+        for(Cog cog : cogs)
         {
-            commands.get(name).shutdown();
+            toRegister.addAll(cog.buildCommands());
+            for(Cmd c : cog.getCommands())
+            {
+                Cmd old = commands.put(c.name, c);
+                if(old != null)
+                {
+                    throw new CmdError("Duplicate command name: " + c.name);
+                }
+                Bot.inst.logDbg("Registering command: " + c.name);
+            }
         }
+
+        api.bulkOverwriteGlobalApplicationCommands(toRegister).join();
     }
 }

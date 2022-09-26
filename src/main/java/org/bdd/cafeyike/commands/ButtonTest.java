@@ -1,25 +1,25 @@
 package org.bdd.cafeyike.commands;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
-import org.bdd.cafeyike.commander.Arguments;
-import org.bdd.cafeyike.commander.commands.Cog;
+import org.bdd.cafeyike.commander.Cog;
 import org.javacord.api.entity.message.Message;
 import org.javacord.api.entity.message.MessageBuilder;
 import org.javacord.api.entity.message.component.ActionRow;
 import org.javacord.api.entity.message.component.Button;
-import org.javacord.api.event.message.MessageCreateEvent;
 import org.javacord.api.interaction.ButtonInteraction;
+import org.javacord.api.interaction.SlashCommandBuilder;
+import org.javacord.api.interaction.SlashCommandInteraction;
 
 public class ButtonTest extends Cog
 {
     public ButtonTest()
     {
-        super("BtnTest", "Button Tests");
-
-        addCommand(new CmdFunc(new String[] {"test"}, this::btnTest));
+        //addCommand(new CmdFunc("test", this::btnTest, "test func"));
     }
 
-    public void btnTest(MessageCreateEvent event, Arguments args)
+    public void btnTest(SlashCommandInteraction event)
     {
         Button[] b = new Button[5];
 
@@ -28,10 +28,12 @@ public class ButtonTest extends Cog
             b[i] = Button.secondary("" + i, "" + i);
         }
 
+        event.createImmediateResponder().respond();
+
         Message m = new MessageBuilder()
                         .setContent("This is content")
                         .addComponents(ActionRow.of(b))
-                        .send(event.getChannel())
+                        .send(event.getChannel().get())
                         .join();
 
         m.addButtonClickListener(event1 -> {
@@ -39,7 +41,7 @@ public class ButtonTest extends Cog
 
              String id = interaction.getCustomId();
 
-             if(interaction.getUser().equals(event.getMessageAuthor().asUser().orElse(null)))
+             if(interaction.getUser().equals(event.getUser()))
              {
                  interaction.createImmediateResponder().setContent("You pressed: " + id).respond();
              }
@@ -54,5 +56,13 @@ public class ButtonTest extends Cog
     public void shutdown()
     {
         // Pass
+    }
+
+    @Override
+    public List<SlashCommandBuilder> buildCommands()
+    {
+        LinkedList<SlashCommandBuilder> out = new LinkedList<>();
+
+        return out;
     }
 }
