@@ -6,17 +6,14 @@ import org.bdd.cafeyike.commander.exceptions.BotError;
 import org.bdd.cafeyike.commands.ButtonTest;
 import org.bdd.cafeyike.commands.Quote;
 import org.bdd.cafeyike.commands.Yike;
+import org.bdd.cafeyike.commands.music.Music;
 import org.javacord.api.entity.intent.Intent;
 
 public class CafeYike
 {
-    private static final Intent[] intents = {Intent.GUILD_MEMBERS,
-                                             Intent.GUILDS,
-                                             Intent.GUILD_MESSAGES,
-                                             Intent.GUILD_EMOJIS,
-                                             Intent.GUILD_BANS,
-                                             Intent.GUILD_MESSAGE_REACTIONS,
-                                             Intent.GUILD_VOICE_STATES};
+    private static final Intent[] intents = { Intent.GUILD_MEMBERS, Intent.GUILDS, Intent.GUILD_MESSAGES,
+            Intent.GUILD_EMOJIS, Intent.GUILD_BANS, Intent.GUILD_MESSAGE_REACTIONS, Intent.GUILD_VOICE_STATES
+    };
 
     public static final String YIKE_LOG = "./dat/yikelog.json";
 
@@ -50,7 +47,8 @@ public class CafeYike
         bot.logInfo("Loading Commands");
         bot.addCog(new Yike());
         bot.addCog(new Quote());
-        //bot.addCog(new Admin());
+        // bot.addCog(new Admin());
+        bot.addCog(new Music());
         bot.addCog(new ButtonTest());
 
         bot.logInfo("Initializing Bot");

@@ -2,15 +2,19 @@ package org.bdd.cafeyike.commander;
 
 import java.util.LinkedList;
 import java.util.List;
+
+import org.javacord.api.DiscordApi;
 import org.javacord.api.interaction.SlashCommandBuilder;
 
 /**
- * Contains one or more internal commands
- * Used to group commands into a single file
+ * Contains one or more internal commands Used to group commands into a single
+ * file
  */
 public abstract class Cog
 {
     private LinkedList<Cmd> commands = new LinkedList<>();
+    private LinkedList<Btn> butttons = new LinkedList<>();
+    private LinkedList<Mdl> modals = new LinkedList<>();
 
     public abstract List<SlashCommandBuilder> buildCommands();
 
@@ -19,10 +23,38 @@ public abstract class Cog
         commands.add(new Cmd(func, name));
     }
 
+    public void registerBtnFunc(Btn.Func func, String prefix)
+    {
+        butttons.add(new Btn(func, prefix));
+    }
+
+    public void registerModal(Mdl.Func func, String prefix)
+    {
+        modals.add(new Mdl(func, prefix));
+    }
+
     public List<Cmd> getCommands()
     {
         return commands;
     }
 
-    public abstract void shutdown();
+    public List<Btn> getButtons()
+    {
+        return butttons;
+    }
+
+    public List<Mdl> getModals()
+    {
+        return modals;
+    }
+
+    public void shutdown()
+    {
+        // Pass
+    }
+
+    public void registerListeners(DiscordApi api)
+    {
+        // Pass
+    }
 }

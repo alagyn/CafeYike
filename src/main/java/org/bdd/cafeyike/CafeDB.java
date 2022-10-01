@@ -6,31 +6,32 @@ import java.nio.file.Path;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import org.bdd.cafeyike.commander.Bot;
 import org.bdd.cafeyike.commander.exceptions.CmdError;
-import org.bdd.cafeyike.commands.Yike;
 import org.javacord.api.entity.user.User;
 
 public class CafeDB
 {
     public static final CafeDB inst = new CafeDB();
 
-    private Object mutex = new Object();
-
     private Connection conn = null;
 
-    private String ADD_YIKE_ST = null;
-    private String INC_YIKE_ST = null;
-    private String SET_YIKE_ST = null;
-    private String REM_YIKE_ST = null;
-    private String GET_YIKE_FOR_USER_ST = null;
-    private String GET_YIKE_FOR_SERVER_ST = null;
-    private String ADD_QUOTE_ST = null;
-    private String GET_QUOTE_ST = null;
+    private static String ADD_YIKE_ST = null;
+    private static String INC_YIKE_ST = null;
+    private static String SET_YIKE_ST = null;
+    private static String REM_YIKE_ST = null;
+    private static String GET_YIKE_FOR_USER_ST = null;
+    private static String GET_YIKE_FOR_SERVER_ST = null;
+
+    private static String ADD_QUOTE_ST = null;
+    private static String GET_QUOTES_ST = null;
+    private static String GET_QUOTE_BY_ID_ST = null;
+    private static String EDIT_QUOTE_ST = null;
+    private static String EDIT_QUOTE_TS_ST = null;
+    private static String RM_QUOTE_ST = null;
 
     private int TIMEOUT_SEC = 10;
 
@@ -38,7 +39,7 @@ public class CafeDB
     {
     }
 
-    public class YikeEntry implements Comparable<YikeEntry>
+    public static class YikeEntry implements Comparable<YikeEntry>
     {
         public final long ID;
         public int count;
@@ -107,22 +108,27 @@ public class CafeDB
         s.execute(loadStatement("sql/quoteSchema.sql"));
 
         ADD_QUOTE_ST = loadStatement("sql/addQuote.sql");
-        GET_QUOTE_ST = loadStatement("sql/getQuotes.sql");
+        GET_QUOTES_ST = loadStatement("sql/getQuotes.sql");
+        GET_QUOTE_BY_ID_ST = loadStatement("sql/getQuoteByID.sql");
+        EDIT_QUOTE_ST = loadStatement("sql/editQuote.sql");
+        EDIT_QUOTE_TS_ST = loadStatement("sql/editQuoteTs.sql");
+        RM_QUOTE_ST = loadStatement("sql/rmQuote.sql");
+    }
+
+    private static PreparedStatement prepare(String statement) throws SQLException
+    {
+        PreparedStatement s = inst.conn.prepareStatement(statement);
+        s.setQueryTimeout(inst.TIMEOUT_SEC);
+        return s;
     }
 
     public static int addYike(long guildId, long userId)
     {
-        return inst._addYike(guildId, userId);
-    }
-
-    private int _addYike(long guildId, long userId)
-    {
         try
         {
-            PreparedStatement s = conn.prepareStatement(INC_YIKE_ST);
+            PreparedStatement s = prepare(INC_YIKE_ST);
             s.setLong(1, guildId);
             s.setLong(2, userId);
-            s.setQueryTimeout(TIMEOUT_SEC);
             ResultSet r = s.executeQuery();
             if(r.next())
             {
@@ -134,11 +140,10 @@ public class CafeDB
             // Else add a new statement
             else
             {
-                PreparedStatement s2 = conn.prepareStatement(ADD_YIKE_ST);
+                PreparedStatement s2 = prepare(ADD_YIKE_ST);
                 s2.setLong(1, guildId);
                 s2.setLong(2, userId);
                 s2.executeUpdate();
-                s2.setQueryTimeout(TIMEOUT_SEC);
                 return 1;
             }
         }
@@ -151,18 +156,13 @@ public class CafeDB
 
     public static int setYikes(long guildId, long userId, int count)
     {
-        return inst._setYikes(guildId, userId, count);
-    }
-
-    private int _setYikes(long guildId, long userId, int count)
-    {
         try
         {
-            PreparedStatement s = conn.prepareStatement(SET_YIKE_ST);
+            PreparedStatement s = prepare(SET_YIKE_ST);
             s.setInt(1, count);
             s.setLong(2, guildId);
             s.setLong(3, userId);
-            s.setQueryTimeout(TIMEOUT_SEC);
+
             ResultSet r = s.executeQuery();
             int out = r.getInt("count");
             r.close();
@@ -176,17 +176,11 @@ public class CafeDB
 
     public static int getYikesForUser(long guildId, long userId)
     {
-        return inst._getYikesForUser(guildId, userId);
-    }
-
-    private int _getYikesForUser(long guildId, long userId)
-    {
         try
         {
-            PreparedStatement s = conn.prepareStatement(GET_YIKE_FOR_USER_ST);
+            PreparedStatement s = prepare(GET_YIKE_FOR_USER_ST);
             s.setLong(1, guildId);
             s.setLong(2, userId);
-            s.setQueryTimeout(TIMEOUT_SEC);
             ResultSet r = s.executeQuery();
 
             int out = 0;
@@ -210,16 +204,11 @@ public class CafeDB
 
     public static List<YikeEntry> getYikesForServer(long guildId)
     {
-        return inst._getYikesForServer(guildId);
-    }
-
-    private List<YikeEntry> _getYikesForServer(long guildId)
-    {
         try
         {
-            PreparedStatement s = conn.prepareStatement(GET_YIKE_FOR_SERVER_ST);
+            PreparedStatement s = prepare(GET_YIKE_FOR_SERVER_ST);
             s.setLong(1, guildId);
-            s.setQueryTimeout(TIMEOUT_SEC);
+
             ResultSet r = s.executeQuery();
 
             ArrayList<YikeEntry> out = new ArrayList<>();
@@ -241,17 +230,12 @@ public class CafeDB
 
     public static int remYike(long guildId, long userId)
     {
-        return inst._remYike(guildId, userId);
-    }
-
-    private int _remYike(long guildId, long userId)
-    {
         try
         {
-            PreparedStatement s = conn.prepareStatement(REM_YIKE_ST);
+            PreparedStatement s = prepare(REM_YIKE_ST);
             s.setLong(1, guildId);
             s.setLong(2, userId);
-            s.setQueryTimeout(TIMEOUT_SEC);
+
             ResultSet r = s.executeQuery();
             if(r.next())
             {
@@ -268,20 +252,19 @@ public class CafeDB
         }
     }
 
-    public static void addQuote(long userId, String content)
-    {
-        inst._addQuote(userId, content);
-    }
-
-    private void _addQuote(long userId, String content)
+    public static long addQuote(long userId, String content)
     {
         try
         {
-            PreparedStatement s = conn.prepareStatement(ADD_QUOTE_ST);
+            PreparedStatement s = prepare(ADD_QUOTE_ST);
             s.setLong(1, userId);
             s.setString(2, content);
-            s.setQueryTimeout(TIMEOUT_SEC);
-            s.executeUpdate();
+
+            ResultSet r = s.executeQuery();
+            r.next();
+            long out = r.getLong(1);
+            r.close();
+            return out;
         }
         catch(SQLException e)
         {
@@ -289,26 +272,23 @@ public class CafeDB
         }
     }
 
-    public class QuoteEntry
+    public static class QuoteEntry
     {
+        public final long quoteId;
         public final long userId;
         public final String content;
         public final Timestamp timestamp;
 
         public QuoteEntry(ResultSet r) throws SQLException
         {
-            userId = r.getLong(1);
-            content = r.getString(2);
-            timestamp = r.getTimestamp(3);
+            quoteId = r.getLong("quote_id");
+            userId = r.getLong("user_id");
+            content = r.getString("content");
+            timestamp = r.getTimestamp("created");
         }
     }
 
     public static List<QuoteEntry> getQuotes(Collection<User> users)
-    {
-        return inst._getQuotes(users);
-    }
-
-    private List<QuoteEntry> _getQuotes(Collection<User> users)
     {
         List<QuoteEntry> out = new LinkedList<>();
 
@@ -326,10 +306,10 @@ public class CafeDB
                 }
             }
 
-            String stat = GET_QUOTE_ST.replace("?", idStringB.toString());
+            String stat = GET_QUOTES_ST.replace("?", idStringB.toString());
 
-            PreparedStatement s = conn.prepareStatement(stat);
-            s.setQueryTimeout(TIMEOUT_SEC);
+            PreparedStatement s = prepare(stat);
+
             ResultSet r = s.executeQuery();
 
             while(r.next())
@@ -345,5 +325,72 @@ public class CafeDB
         }
 
         return out;
+    }
+
+    public static QuoteEntry getQuote(long quoteID)
+    {
+        try
+        {
+            PreparedStatement s = prepare(GET_QUOTE_BY_ID_ST);
+            s.setLong(1, quoteID);
+            ResultSet r = s.executeQuery();
+
+            if(r.next())
+            {
+                QuoteEntry out = new QuoteEntry(r);
+                r.close();
+                return out;
+            }
+            else
+            {
+                r.close();
+                throw new CmdError("Quote Not Found");
+            }
+        }
+        catch(SQLException e)
+        {
+            throw new CmdError("Cannot get quote: " + e.getMessage());
+        }
+    }
+
+    public static void editQuote(long quoteID, String content, Timestamp ts)
+    {
+        try
+        {
+            if(content.length() > 0)
+            {
+                PreparedStatement s = prepare(EDIT_QUOTE_ST);
+
+                s.setString(1, content);
+                s.setLong(2, quoteID);
+                s.executeUpdate();
+            }
+
+            if(ts != null)
+            {
+                PreparedStatement s = prepare(EDIT_QUOTE_TS_ST);
+                s.setTimestamp(1, ts);
+                s.setLong(2, quoteID);
+                s.executeUpdate();
+            }
+        }
+        catch(SQLException e)
+        {
+            throw new CmdError("Cannot edit quote: " + e.getMessage());
+        }
+    }
+
+    public static void rmQuote(long quoteId)
+    {
+        try
+        {
+            PreparedStatement s = prepare(RM_QUOTE_ST);
+            s.setLong(1, quoteId);
+            s.executeUpdate();
+        }
+        catch(SQLException e)
+        {
+            throw new CmdError("Cannot delete quote: " + e.getMessage());
+        }
     }
 }

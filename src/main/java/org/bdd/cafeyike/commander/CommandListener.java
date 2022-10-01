@@ -9,8 +9,11 @@ import org.javacord.api.entity.message.MessageFlag;
 import org.javacord.api.entity.message.embed.EmbedBuilder;
 import org.javacord.api.event.interaction.InteractionCreateEvent;
 import org.javacord.api.interaction.AutocompleteInteraction;
+import org.javacord.api.interaction.ButtonInteraction;
 import org.javacord.api.interaction.Interaction;
 import org.javacord.api.interaction.InteractionType;
+import org.javacord.api.interaction.MessageComponentInteraction;
+import org.javacord.api.interaction.ModalInteraction;
 import org.javacord.api.interaction.SlashCommandBuilder;
 import org.javacord.api.interaction.SlashCommandInteraction;
 import org.javacord.api.listener.interaction.InteractionCreateListener;
@@ -18,6 +21,8 @@ import org.javacord.api.listener.interaction.InteractionCreateListener;
 public class CommandListener implements InteractionCreateListener
 {
     private HashMap<String, Cmd> commands = new HashMap<>();
+    private HashMap<String, Btn> buttons = new HashMap<>();
+    private HashMap<String, Mdl> modals = new HashMap<>();
     private LinkedList<Cog> cogs = new LinkedList<>();
 
     public CommandListener()
@@ -44,6 +49,12 @@ public class CommandListener implements InteractionCreateListener
         case APPLICATION_COMMAND_AUTOCOMPLETE:
             runCommandAutocomplete(i.asAutocompleteInteraction().get());
             break;
+        case MESSAGE_COMPONENT:
+            runComponent(i.asMessageComponentInteraction().get());
+            break;
+        case MODAL_SUBMIT:
+            runModal(i.asModalInteraction().get());
+            break;
         default:
             break;
         }
@@ -51,11 +62,6 @@ public class CommandListener implements InteractionCreateListener
 
     private void runCommand(SlashCommandInteraction interaction)
     {
-        if(interaction == null)
-        {
-            return;
-        }
-
         String commandName = interaction.getCommandName();
         Bot.inst.logDbg("Got cmd: " + commandName);
         Cmd c = commands.get(commandName);
@@ -63,9 +69,8 @@ public class CommandListener implements InteractionCreateListener
         if(c == null)
         {
             interaction.createImmediateResponder()
-                .addEmbed(new EmbedBuilder().addField("Error", "Command \"" + commandName + "\" not found"))
-                .setFlags(MessageFlag.EPHEMERAL)
-                .respond();
+                    .addEmbed(new EmbedBuilder().addField("Error", "Command \"" + commandName + "\" not found"))
+                    .setFlags(MessageFlag.EPHEMERAL).respond();
             return;
         }
 
@@ -80,6 +85,80 @@ public class CommandListener implements InteractionCreateListener
         catch(CmdError e)
         {
             System.out.println("CommandListener:runCommand() Error Caught, Stacktrace:");
+            e.printStackTrace();
+        }
+    }
+
+    private void runModal(ModalInteraction event)
+    {
+        // Limit to one split, i.e. 2 sections
+        String[] data = event.getCustomId().split(":", 2);
+        Bot.inst.logDbg("Got modal: " + data[0]);
+
+        Mdl m = modals.get(data[0]);
+
+        if(m == null)
+        {
+            event.createImmediateResponder()
+                    .addEmbed(new EmbedBuilder().addField("Error", "Modal \"" + data[0] + "\" not found"))
+                    .setFlags(MessageFlag.EPHEMERAL).respond();
+            return;
+        }
+
+        try
+        {
+            m.func.accept(event, data[1]);
+        }
+        catch(UsageError e)
+        {
+            // Pass
+        }
+        catch(CmdError e)
+        {
+            System.out.println("CommandListener:runModal() Error Caught, Stacktrace:");
+            e.printStackTrace();
+        }
+    }
+
+    private void runComponent(MessageComponentInteraction event)
+    {
+        switch(event.getComponentType())
+        {
+        case BUTTON:
+            runButton(event.asButtonInteraction().get());
+            break;
+        default:
+            break;
+        }
+    }
+
+    private void runButton(ButtonInteraction event)
+    {
+        // Limit to one split, i.e. 2 sections
+        String[] data = event.getCustomId().split(":", 2);
+        Bot.inst.logDbg("Got btn: " + data[0]);
+
+        Btn b = buttons.get(data[0]);
+
+        if(b == null)
+        {
+            event.createImmediateResponder()
+                    .addEmbed(new EmbedBuilder().addField("Error", "Button \"" + data[0] + "\" not found"))
+                    .setFlags(MessageFlag.EPHEMERAL).respond();
+            return;
+        }
+
+        try
+        {
+            b.func.accept(event, data[1]);
+        }
+        catch(UsageError e)
+        {
+            // Pass
+        }
+        catch(CmdError e)
+        {
+            System.out.println("CommandListener:runButton() Error Caught, Stacktrace:");
             e.printStackTrace();
         }
     }
@@ -116,6 +195,28 @@ public class CommandListener implements InteractionCreateListener
                 }
                 Bot.inst.logDbg("Registering command: " + c.name);
             }
+
+            for(Btn b : cog.getButtons())
+            {
+                Btn old = buttons.put(b.prefix, b);
+                if(old != null)
+                {
+                    throw new CmdError("Duplicate button prefix: " + b.prefix);
+                }
+                Bot.inst.logDbg("Registering button: " + b.prefix);
+            }
+
+            for(Mdl m : cog.getModals())
+            {
+                Mdl old = modals.put(m.prefix, m);
+                if(old != null)
+                {
+                    throw new CmdError("Duplicate modal prefix: " + m.prefix);
+                }
+                Bot.inst.logDbg("Registering modal: " + m.prefix);
+            }
+
+            cog.registerListeners(api);
         }
 
         api.bulkOverwriteGlobalApplicationCommands(toRegister).join();

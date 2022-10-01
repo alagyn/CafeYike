@@ -1,9 +1,7 @@
 package org.bdd.cafeyike.commander.utils;
 
-import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import org.bdd.cafeyike.commander.exceptions.CmdError;
-import org.javacord.api.interaction.callback.InteractionOriginalResponseUpdater;
 
 public class DoAfter extends Thread
 {
@@ -31,9 +29,9 @@ public class DoAfter extends Thread
         }
         catch(InterruptedException e)
         {
-            //pass
+            // pass
         }
 
-        cb.accept();
+        cb.accept(0);
     }
 }
