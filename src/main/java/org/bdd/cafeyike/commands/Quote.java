@@ -16,6 +16,7 @@ import java.util.concurrent.ExecutionException;
 import org.bdd.cafeyike.CafeDB;
 import org.bdd.cafeyike.CafeDB.QuoteEntry;
 import org.bdd.cafeyike.commander.Bot;
+import org.bdd.cafeyike.commander.Btn;
 import org.bdd.cafeyike.commander.Cog;
 import org.bdd.cafeyike.commander.exceptions.CmdError;
 import org.javacord.api.entity.message.component.ActionRow;
@@ -91,8 +92,8 @@ public class Quote extends Cog
 
     public ActionRow getQuoteBtns(long quoteId)
     {
-        return ActionRow.of(Button.primary(EDIT_BTN + ":" + quoteId, "Edit"),
-                Button.danger(RM_BTN + ":" + quoteId, "Delete"));
+        return ActionRow.of(Button.primary(Bot.makeId(EDIT_BTN, quoteId), "Edit"),
+                Button.danger(Bot.makeId(RM_BTN, quoteId), "Delete"));
     }
 
     public void getQuotes(SlashCommandInteraction event)
@@ -215,7 +216,7 @@ public class Quote extends Cog
 
     private void sendQuoteEditModal(Interaction event, long quoteId)
     {
-        event.respondWithModal(QUOTE_MODAL + ":" + quoteId, "Edit Quote",
+        event.respondWithModal(Bot.makeId(QUOTE_MODAL, quoteId), "Edit Quote",
                 ActionRow.of(TextInput.create(TextInputStyle.SHORT, "newQuote", "New Quote")), ActionRow.of(TextInput
                         .create(TextInputStyle.SHORT, "time", "New Timestamp: " + STR_DATE_FMT + " (24 hour clock)")));
 

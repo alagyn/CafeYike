@@ -82,7 +82,8 @@ public class Bot
 
         listenManager = api.addInteractionCreateListener(cl);
 
-        Runtime.getRuntime().addShutdownHook(new Thread() {
+        Runtime.getRuntime().addShutdownHook(new Thread()
+        {
             public void run()
             {
                 Bot.inst.intShutdown();
@@ -97,7 +98,8 @@ public class Bot
 
     public void shutdown()
     {
-        new Thread() {
+        new Thread()
+        {
             public void run()
             {
                 Bot.inst._shutdown();
@@ -134,10 +136,10 @@ public class Bot
 
     public void logErr(String x)
     {
-        System.out.print((char)27);
+        System.out.print((char) 27);
         System.out.print("[31m");
         System.out.print(x);
-        System.out.print((char)27);
+        System.out.print((char) 27);
         System.out.println("[0m");
     }
 
@@ -153,29 +155,32 @@ public class Bot
 
     public static void sendError(Interaction event, String message)
     {
-        event.createImmediateResponder()
-            .addEmbed(new EmbedBuilder().addField("Error", message))
-            .setFlags(MessageFlag.EPHEMERAL)
-            .respond();
+        event.createImmediateResponder().addEmbed(new EmbedBuilder().addField("Error", message))
+                .setFlags(MessageFlag.EPHEMERAL).respond();
         throw new UsageError(message);
     }
 
     public static void sendError(SlashCommandInteraction event, String message)
     {
-        sendError((Interaction)event, message);
+        sendError((Interaction) event, message);
     }
 
     public static void sendFollowError(Interaction event, String message)
     {
-        event.createFollowupMessageBuilder()
-            .addEmbed(new EmbedBuilder().addField("Error", message))
-            .setFlags(MessageFlag.EPHEMERAL)
-            .send();
+        event.createFollowupMessageBuilder().addEmbed(new EmbedBuilder().addField("Error", message))
+                .setFlags(MessageFlag.EPHEMERAL).send();
         throw new UsageError(message);
     }
 
     public static void sendFollowError(SlashCommandInteraction event, String message)
     {
-        sendFollowError((Interaction)event, message);
+        sendFollowError((Interaction) event, message);
+    }
+
+    public static String makeId(String prefix, Object data)
+    {
+        StringBuilder out = new StringBuilder();
+        out.append(prefix).append(":").append(data.toString());
+        return out.toString();
     }
 }
