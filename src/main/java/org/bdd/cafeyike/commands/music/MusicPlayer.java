@@ -160,6 +160,12 @@ public class MusicPlayer extends AudioSourceBase implements AudioEventListener
         }
 
         out.append(curIdx + 1).append("/").append(trackQueue.size());
+
+        if(looping)
+        {
+            out.append(" LOOPING");
+        }
+
         return out.toString();
     }
 
