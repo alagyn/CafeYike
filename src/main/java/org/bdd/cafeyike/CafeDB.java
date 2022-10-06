@@ -9,12 +9,15 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import org.bdd.cafeyike.commander.Bot;
 import org.bdd.cafeyike.commander.exceptions.CmdError;
 import org.javacord.api.entity.user.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CafeDB
 {
+    private static final Logger log = LoggerFactory.getLogger(CafeDB.class);
+
     public static final CafeDB inst = new CafeDB();
 
     private Connection conn = null;
@@ -149,7 +152,7 @@ public class CafeDB
         }
         catch(SQLException e)
         {
-            Bot.inst.logInfo(e.getSQLState());
+            log.error("Cannot add yike: ", e.getSQLState());
             throw new CmdError("Unable to update yikes: " + e.getMessage());
         }
     }
@@ -190,7 +193,7 @@ public class CafeDB
             }
             else
             {
-                Bot.inst.logDbg("Not found, guild: " + guildId + ", user: " + userId);
+                log.error("Not found, guild: {}, user: {}", guildId, userId);
             }
 
             r.close();

@@ -30,9 +30,13 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MusicPlayer extends AudioSourceBase implements AudioEventListener
 {
+    private final Logger log = LoggerFactory.getLogger(getClass());
+
     public final AudioPlayer player;
     private AudioFrame lastFrame;
     public Message nowPlayingMsg;
@@ -171,7 +175,6 @@ public class MusicPlayer extends AudioSourceBase implements AudioEventListener
 
     public synchronized void makeNewNowPlaying()
     {
-        Bot.inst.logDbg("Making new now playing");
         Message newMsg = new MessageBuilder()
                 .addEmbed(new EmbedBuilder().addField(embedTitle(), currentTrack.getInfo().title))
                 .addComponents(getButtons()).send(textChannel).join();
@@ -194,13 +197,13 @@ public class MusicPlayer extends AudioSourceBase implements AudioEventListener
         {
             // Preincrement
             currentTrack = trackQueue.get(++curIdx);
-            Bot.inst.logDbg("Starting Next: " + currentTrack.getIdentifier());
+            log.trace("Starting Next: {}", currentTrack.getIdentifier());
             player.playTrack(currentTrack.makeClone());
             makeNewNowPlaying();
         }
         else
         {
-            Bot.inst.logDbg("End of queue");
+            log.trace("End of queue");
             player.setPaused(true);
             setEndOfQueue();
         }
@@ -214,7 +217,7 @@ public class MusicPlayer extends AudioSourceBase implements AudioEventListener
         {
             // predecrement
             currentTrack = trackQueue.get(--curIdx);
-            Bot.inst.logDbg("Starting Prev");
+            log.debug("Starting Prev");
             player.playTrack(currentTrack.makeClone());
             makeNewNowPlaying();
         }
@@ -240,7 +243,7 @@ public class MusicPlayer extends AudioSourceBase implements AudioEventListener
      */
     public void onPlayerPause(AudioPlayer player)
     {
-        Bot.inst.logDbg("Player paused");
+        log.trace("Player paused");
         // change message from now playing to paused?
     }
 
@@ -249,7 +252,7 @@ public class MusicPlayer extends AudioSourceBase implements AudioEventListener
      */
     public void onPlayerResume(AudioPlayer player)
     {
-        Bot.inst.logDbg("Player resumed");
+        log.trace("Player resumed");
         // TODO
     }
 
@@ -259,7 +262,7 @@ public class MusicPlayer extends AudioSourceBase implements AudioEventListener
      */
     public void onTrackStart(AudioPlayer player, AudioTrack track)
     {
-        Bot.inst.logDbg("onTrackStart()");
+        log.trace("onTrackStart()");
         // noop?
     }
 
@@ -270,7 +273,7 @@ public class MusicPlayer extends AudioSourceBase implements AudioEventListener
      */
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason)
     {
-        Bot.inst.logDbg("onTrackEnd() " + endReason.toString());
+        log.trace("onTrackEnd() {}", endReason.toString());
         if(endReason == AudioTrackEndReason.REPLACED)
         {
             return;
@@ -290,7 +293,7 @@ public class MusicPlayer extends AudioSourceBase implements AudioEventListener
     public void onTrackException(AudioPlayer player, AudioTrack track, FriendlyException exception)
     {
         // Pause and wait for a continue button?
-        Bot.inst.logErr("MusicPlayer::onTrackException(): " + track.getIdentifier() + ":" + exception.getMessage());
+        log.error("MusicPlayer::onTrackException(): {} : {} ", track.getIdentifier(), exception.getMessage());
         player.playTrack(track);
     }
 
@@ -303,7 +306,7 @@ public class MusicPlayer extends AudioSourceBase implements AudioEventListener
     public void onTrackStuck(AudioPlayer player, AudioTrack track, long thresholdMs)
     {
         // ^^^^?
-        Bot.inst.logErr("MusicPlayer::onTrackStuck(): " + track.getIdentifier() + ": stuck");
+        log.error("MusicPlayer::onTrackStuck(): {} : stuck", track.getIdentifier());
     }
 
     public void onTrackStuck(AudioPlayer player, AudioTrack track, long thresholdMs, StackTraceElement[] stackTrace)

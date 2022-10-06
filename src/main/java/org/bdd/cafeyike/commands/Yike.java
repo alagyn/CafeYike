@@ -100,9 +100,7 @@ public class Yike extends Cog
         if(requestAdmin)
         {
             Role r = event.getUser().getRoles(serv).get(0);
-            Bot.inst.logDbg(r.toString());
-            if(event.getUser().getRoles(serv).get(0).getPermissions().getAllowedPermission()
-                    .contains(PermissionType.ADMINISTRATOR))
+            if(r.getPermissions().getAllowedPermission().contains(PermissionType.ADMINISTRATOR))
             {
                 int newVal = CafeDB.remYike(serv.getId(), recip.getId());
                 event.createFollowupMessageBuilder().addEmbed(new EmbedBuilder().addField("Admin Un-Yike",

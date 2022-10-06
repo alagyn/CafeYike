@@ -16,7 +16,6 @@ import java.util.concurrent.ExecutionException;
 import org.bdd.cafeyike.CafeDB;
 import org.bdd.cafeyike.CafeDB.QuoteEntry;
 import org.bdd.cafeyike.commander.Bot;
-import org.bdd.cafeyike.commander.Btn;
 import org.bdd.cafeyike.commander.Cog;
 import org.bdd.cafeyike.commander.exceptions.CmdError;
 import org.javacord.api.entity.message.component.ActionRow;
@@ -34,9 +33,13 @@ import org.javacord.api.interaction.SlashCommandBuilder;
 import org.javacord.api.interaction.SlashCommandInteraction;
 import org.javacord.api.interaction.SlashCommandOption;
 import org.javacord.api.interaction.SlashCommandOptionType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Quote extends Cog
 {
+    private final Logger log = LoggerFactory.getLogger(getClass());
+
     private static final String QUOTE_MODAL = "quoteM";
     private static final String EDIT_BTN = "edit";
     private static final String RM_BTN = "rm";
@@ -161,13 +164,12 @@ public class Quote extends Cog
                     }
                     catch(InterruptedException e)
                     {
-                        Bot.inst.logDbg("getQuote() Skipping user " + q.userId + ", interrupted");
+                        log.debug("getQuote() Skipping user {}, interrupted", q.userId);
                         continue;
                     }
                     catch(ExecutionException e)
                     {
-                        Bot.inst.logDbg(
-                                "getQuote() Skipping user " + q.userId + ", execution error: " + e.getMessage());
+                        log.debug("getQuote() Skipping user {}, execution error: {}", q.userId, e.getMessage());
                         continue;
                     }
                 }

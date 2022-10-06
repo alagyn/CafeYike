@@ -3,7 +3,9 @@ package org.bdd.cafeyike.commander;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
+
 import org.bdd.cafeyike.commander.exceptions.BotError;
+import org.bdd.cafeyike.commander.exceptions.CmdError;
 import org.bdd.cafeyike.commander.exceptions.UsageError;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
@@ -17,9 +19,12 @@ import org.javacord.api.interaction.Interaction;
 import org.javacord.api.interaction.SlashCommandInteraction;
 import org.javacord.api.listener.interaction.InteractionCreateListener;
 import org.javacord.api.util.event.ListenerManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Bot
 {
+    private final Logger log = LoggerFactory.getLogger(getClass());
     public static final Bot inst = new Bot();
 
     private final Properties config;
@@ -44,8 +49,13 @@ public class Bot
             System.out.println("Cannot load config file");
             System.exit(0);
         }
+        String token = config.getProperty("DISCORD_TOKEN");
+        if(token == null || token.isEmpty())
+        {
+            throw new CmdError("Bot() login token not defined, system.config: DISCORD_TOKEN = [token]");
+        }
 
-        temp_builder = new DiscordApiBuilder().setToken(config.getProperty("DISCORD_TOKEN"));
+        temp_builder = new DiscordApiBuilder().setToken(token);
 
         cl = new CommandListener();
     }
@@ -89,6 +99,9 @@ public class Bot
                 Bot.inst.intShutdown();
             }
         });
+
+        User me = api.getYourself();
+        log.info("Bot {} is now online", me.getDiscriminatedName());
     }
 
     public DiscordApi getApi()
@@ -96,51 +109,12 @@ public class Bot
         return api;
     }
 
-    public void shutdown()
-    {
-        new Thread()
-        {
-            public void run()
-            {
-                Bot.inst._shutdown();
-            }
-        }.start();
-    }
-
     private void intShutdown()
     {
-        logInfo("Shutting down Command Listener");
+        log.info("Shutting down Command Listener");
         cl.shutdown();
         api.updateStatus(UserStatus.OFFLINE);
-        logInfo("Exitting");
-    }
-
-    private void _shutdown()
-    {
-        logInfo("Removing listener");
-        listenManager.remove();
-        logInfo("Disconnecting API");
-        api.disconnect().join();
-    }
-
-    public void logInfo(String x)
-    {
-        // TODO
-        System.out.println(x);
-    }
-
-    public void logDbg(String x)
-    {
-        System.out.println(x);
-    }
-
-    public void logErr(String x)
-    {
-        System.out.print((char) 27);
-        System.out.print("[31m");
-        System.out.print(x);
-        System.out.print((char) 27);
-        System.out.println("[0m");
+        log.info("Exitting");
     }
 
     public static String getNickname(User user, Server serv)

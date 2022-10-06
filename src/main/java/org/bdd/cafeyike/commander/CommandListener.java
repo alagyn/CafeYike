@@ -17,9 +17,13 @@ import org.javacord.api.interaction.ModalInteraction;
 import org.javacord.api.interaction.SlashCommandBuilder;
 import org.javacord.api.interaction.SlashCommandInteraction;
 import org.javacord.api.listener.interaction.InteractionCreateListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CommandListener implements InteractionCreateListener
 {
+    private final Logger log = LoggerFactory.getLogger(getClass());
+
     private HashMap<String, Cmd> commands = new HashMap<>();
     private HashMap<String, Btn> buttons = new HashMap<>();
     private HashMap<String, Mdl> modals = new HashMap<>();
@@ -63,7 +67,7 @@ public class CommandListener implements InteractionCreateListener
     private void runCommand(SlashCommandInteraction interaction)
     {
         String commandName = interaction.getCommandName();
-        Bot.inst.logDbg("Got cmd: " + commandName);
+        log.debug("runCommand() Got cmd: {}", commandName);
         Cmd c = commands.get(commandName);
 
         if(c == null)
@@ -84,7 +88,7 @@ public class CommandListener implements InteractionCreateListener
         }
         catch(CmdError e)
         {
-            System.out.println("CommandListener:runCommand() Error Caught, Stacktrace:");
+            System.out.println("runCommand() Error Caught, Stacktrace:");
             e.printStackTrace();
         }
     }
@@ -93,7 +97,7 @@ public class CommandListener implements InteractionCreateListener
     {
         // Limit to one split, i.e. 2 sections
         String[] data = event.getCustomId().split(":", 2);
-        Bot.inst.logDbg("Got modal: " + data[0]);
+        log.debug("Got modal: {}", data[0]);
 
         Mdl m = modals.get(data[0]);
 
@@ -115,8 +119,7 @@ public class CommandListener implements InteractionCreateListener
         }
         catch(CmdError e)
         {
-            System.out.println("CommandListener:runModal() Error Caught, Stacktrace:");
-            e.printStackTrace();
+            log.error("runModal() Error Caught, Stacktrace:", e);
         }
     }
 
@@ -136,7 +139,7 @@ public class CommandListener implements InteractionCreateListener
     {
         // Limit to one split, i.e. 2 sections
         String[] data = event.getCustomId().split(":", 2);
-        Bot.inst.logDbg("Got btn: " + data[0]);
+        log.debug("runButton() Got btn: {}", data[0]);
 
         Btn b = buttons.get(data[0]);
 
@@ -158,8 +161,7 @@ public class CommandListener implements InteractionCreateListener
         }
         catch(CmdError e)
         {
-            System.out.println("CommandListener:runButton() Error Caught, Stacktrace:");
-            e.printStackTrace();
+            log.error("runButton() Error Caught, Stacktrace:", e);
         }
     }
 
@@ -193,7 +195,7 @@ public class CommandListener implements InteractionCreateListener
                 {
                     throw new CmdError("Duplicate command name: " + c.name);
                 }
-                Bot.inst.logDbg("Registering command: " + c.name);
+                log.debug("registerCommands() Registering command: {}", c.name);
             }
 
             for(Btn b : cog.getButtons())
@@ -201,9 +203,9 @@ public class CommandListener implements InteractionCreateListener
                 Btn old = buttons.put(b.prefix, b);
                 if(old != null)
                 {
-                    throw new CmdError("Duplicate button prefix: " + b.prefix);
+                    throw new CmdError("registerCommands() Duplicate button prefix: " + b.prefix);
                 }
-                Bot.inst.logDbg("Registering button: " + b.prefix);
+                log.debug("registerCommands() Registering button: {}", b.prefix);
             }
 
             for(Mdl m : cog.getModals())
@@ -211,9 +213,9 @@ public class CommandListener implements InteractionCreateListener
                 Mdl old = modals.put(m.prefix, m);
                 if(old != null)
                 {
-                    throw new CmdError("Duplicate modal prefix: " + m.prefix);
+                    throw new CmdError("registerCommands() Duplicate modal prefix: " + m.prefix);
                 }
-                Bot.inst.logDbg("Registering modal: " + m.prefix);
+                log.debug("registerCommands() Registering modal: {}", m.prefix);
             }
 
             cog.registerListeners(api);

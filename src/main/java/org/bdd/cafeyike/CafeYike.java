@@ -3,14 +3,17 @@ package org.bdd.cafeyike;
 import java.sql.SQLException;
 import org.bdd.cafeyike.commander.Bot;
 import org.bdd.cafeyike.commander.exceptions.BotError;
-import org.bdd.cafeyike.commands.ButtonTest;
 import org.bdd.cafeyike.commands.Quote;
 import org.bdd.cafeyike.commands.Yike;
 import org.bdd.cafeyike.commands.music.Music;
 import org.javacord.api.entity.intent.Intent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CafeYike
 {
+    private static final Logger log = LoggerFactory.getLogger(CafeYike.class);
+
     private static final Intent[] intents = { Intent.GUILD_MEMBERS, Intent.GUILDS, Intent.GUILD_MESSAGES,
             Intent.GUILD_EMOJIS, Intent.GUILD_BANS, Intent.GUILD_MESSAGE_REACTIONS, Intent.GUILD_VOICE_STATES
     };
@@ -21,7 +24,7 @@ public class CafeYike
     {
         Bot bot = Bot.inst;
 
-        bot.logInfo("Initializing Database");
+        log.info("Initializing Database");
 
         CafeDB db = CafeDB.inst;
         try
@@ -30,28 +33,21 @@ public class CafeYike
         }
         catch(SQLException e)
         {
-            bot.logErr("Unable to start database:");
-            bot.logErr(e.getMessage());
-            e.printStackTrace();
-            bot.logErr(e.getSQLState());
+            log.error("Unable to start database:", e);
             System.exit(-1);
         }
         catch(Exception e)
         {
-            bot.logErr("Unable to start database:");
-            bot.logErr(e.getMessage());
-            e.printStackTrace();
+            log.error("Unable to start database:", e);
             System.exit(-1);
         }
 
-        bot.logInfo("Loading Commands");
+        log.info("Loading Commands");
         bot.addCog(new Yike());
         bot.addCog(new Quote());
-        // bot.addCog(new Admin());
         bot.addCog(new Music());
-        bot.addCog(new ButtonTest());
 
-        bot.logInfo("Initializing Bot");
+        log.info("Initializing Bot");
         try
         {
             bot.init("_", intents);
@@ -61,6 +57,5 @@ public class CafeYike
             botError.printStackTrace();
         }
 
-        bot.logInfo("Bot Online");
     }
 }

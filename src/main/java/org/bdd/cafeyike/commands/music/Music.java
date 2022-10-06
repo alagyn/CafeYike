@@ -29,9 +29,12 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Music extends Cog
 {
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     private AudioPlayerManager playerManager;
 
@@ -157,7 +160,7 @@ public class Music extends Cog
             @Override
             public synchronized void trackLoaded(AudioTrack track)
             {
-                Bot.inst.logDbg("Loaded track: " + track.getIdentifier());
+                log.trace("Loaded track: {}", track.getIdentifier());
                 musicPlayer.addToQueue(track);
 
                 if(musicPlayer.endOfQueue())
@@ -176,7 +179,7 @@ public class Music extends Cog
             @Override
             public synchronized void playlistLoaded(AudioPlaylist playlist)
             {
-                Bot.inst.logDbg("playlistLoaded()");
+                log.trace("playlistLoaded()");
                 int len = playlist.getTracks().size();
                 StringBuilder text = new StringBuilder();
                 text.append("Playlist: ").append(playlist.getName()).append("\n");
@@ -208,7 +211,7 @@ public class Music extends Cog
             @Override
             public synchronized void noMatches()
             {
-                Bot.inst.logErr("No matches foud");
+                log.warn("No matches foud");
 
                 Bot.sendFollowError(event, "No matches found");
 
@@ -219,7 +222,7 @@ public class Music extends Cog
             public synchronized void loadFailed(FriendlyException throwable)
             {
                 // Notify the user that everything exploded
-                Bot.inst.logErr("Load failed: " + throwable.getMessage());
+                log.warn("Load failed: ", throwable);
                 Bot.sendFollowError(event, "Load failed");
 
                 musicPlayer.makeNewNowPlaying();
