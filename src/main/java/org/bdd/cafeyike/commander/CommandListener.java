@@ -88,8 +88,7 @@ public class CommandListener implements InteractionCreateListener
         }
         catch(CmdError e)
         {
-            System.out.println("runCommand() Error Caught, Stacktrace:");
-            e.printStackTrace();
+            log.error("runCommand() Error Caught, Stacktrace:", e);
         }
     }
 

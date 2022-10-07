@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
             content = str(quote[2])
             # print("Creating Quote:", userId, newTime, content)
-            conn.execute(addQuoteSt, (userId, newTime, content))
+            conn.execute(addQuoteSt, (userId, content, newTime))
 
     conn.commit()
 

@@ -197,6 +197,7 @@ public class Quote extends Cog
         }
         catch(IOException e)
         {
+            log.error("Cannot create quote file : {}", e.getMessage());
             throw new CmdError("Cannot create quote file: " + e.getMessage());
         }
 
