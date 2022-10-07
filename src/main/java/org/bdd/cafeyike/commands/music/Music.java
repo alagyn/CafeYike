@@ -90,7 +90,9 @@ public class Music extends Cog
 
         if(ac != null)
         {
-            ((MusicPlayer) ac.getAudioSource().get()).nowPlayingMsg.delete();
+            MusicPlayer mp = (MusicPlayer) ac.getAudioSource().get();
+            mp.nowPlayingMsg.delete();
+            mp.stop();
             ac.close();
             event.createImmediateResponder().addEmbed(new EmbedBuilder().addField("Music", "Goodbye")).respond();
         }

@@ -72,6 +72,11 @@ public class MusicPlayer extends AudioSourceBase implements AudioEventListener
         player.addListener(this);
     }
 
+    public void stop()
+    {
+        player.stopTrack();
+    }
+
     public AudioTrack current()
     {
         return currentTrack.makeClone();
@@ -279,7 +284,7 @@ public class MusicPlayer extends AudioSourceBase implements AudioEventListener
             return;
         }
 
-        if(!looping)
+        if(!looping && endReason.mayStartNext)
         {
             startNext();
         }
