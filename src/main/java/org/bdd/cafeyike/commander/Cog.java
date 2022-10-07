@@ -4,6 +4,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.javacord.api.DiscordApi;
+import org.javacord.api.interaction.ButtonInteraction;
 import org.javacord.api.interaction.SlashCommandBuilder;
 
 /**
@@ -33,6 +34,11 @@ public abstract class Cog
         modals.add(new Mdl(func, prefix));
     }
 
+    public void registerNoopBtn(String name)
+    {
+        butttons.add(new Btn(this::noop, name));
+    }
+
     public List<Cmd> getCommands()
     {
         return commands;
@@ -56,5 +62,10 @@ public abstract class Cog
     public void registerListeners(DiscordApi api)
     {
         // Pass
+    }
+
+    private void noop(ButtonInteraction event, String data)
+    {
+
     }
 }

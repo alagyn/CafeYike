@@ -211,7 +211,7 @@ public class Music extends Cog
             @Override
             public synchronized void noMatches()
             {
-                log.warn("No matches foud");
+                log.warn("No matches found");
 
                 Bot.sendFollowError(event, "No matches found");
 

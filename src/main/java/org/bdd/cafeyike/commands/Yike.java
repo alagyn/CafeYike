@@ -28,6 +28,9 @@ public class Yike extends Cog
 {
     private final int voteTimeSec;
 
+    private final String yikeBtn = "yike";
+    private final String unyikeBtn = "unyike";
+
     public Yike()
     {
         voteTimeSec = Bot.getIntConfig("voteTimeSec");
@@ -57,7 +60,7 @@ public class Yike extends Cog
 
         nick = recip.getDisplayName(serv);
 
-        interaction.createFollowupMessageBuilder()
+        interaction.createFollowupMessageBuilder().setContent(recip.getMentionTag())
                 .addEmbed(new EmbedBuilder().addField("Yike", nick + " now has " + newval + " yikes")).send();
     }
 
@@ -111,8 +114,9 @@ public class Yike extends Cog
             Bot.sendError(event, "You must be an admin to use the admin flag");
         }
 
-        InteractionOriginalResponseUpdater updater = event.createImmediateResponder().addEmbed(unyikeMessage(0, 0))
-                .addComponents(ActionRow.of(Button.success("unyike", "Cleanse"), Button.danger("yike", "Sustain")))
+        InteractionOriginalResponseUpdater updater = event.createImmediateResponder().setContent(recip.getMentionTag())
+                .addEmbed(unyikeMessage(0, 0))
+                .addComponents(ActionRow.of(Button.success(unyikeBtn, "Cleanse"), Button.danger(yikeBtn, "Sustain")))
                 .respond().join();
 
         Message m = updater.update().join();
@@ -130,7 +134,7 @@ public class Yike extends Cog
 
             User u = inter.getUser();
 
-            boolean vote = action.equals("unyike");
+            boolean vote = action.equals(unyikeBtn);
 
             Boolean old = votemap.put(u.getId(), vote);
 
@@ -217,6 +221,8 @@ public class Yike extends Cog
                 .addOption(SlashCommandOption.create(SlashCommandOptionType.USER, "user", "List for a specific user")));
 
         registerCmdFunc(this::list, "list");
+        registerNoopBtn(yikeBtn);
+        registerNoopBtn(unyikeBtn);
 
         return out;
     }
