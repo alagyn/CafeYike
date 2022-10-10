@@ -95,8 +95,7 @@ public class Quote extends Cog
 
     public ActionRow getQuoteBtns(long quoteId)
     {
-        return ActionRow.of(Button.primary(Bot.makeId(EDIT_BTN, quoteId), "Edit"),
-                Button.danger(Bot.makeId(RM_BTN, quoteId), "Delete"));
+        return ActionRow.of(Button.primary(Bot.makeId(EDIT_BTN, quoteId), "Edit"));
     }
 
     public void getQuotes(SlashCommandInteraction event)
@@ -246,16 +245,6 @@ public class Quote extends Cog
         sendQuoteEditModal((Interaction) event, quoteId);
     }
 
-    private void rmBtn(ButtonInteraction event, String data)
-    {
-        Long quoteId = Long.parseLong(data);
-        event.getMessage().delete();
-
-        event.createImmediateResponder().addEmbed(new EmbedBuilder().addField("Quote", "Deleted")).respond();
-
-        CafeDB.rmQuote(quoteId);
-    }
-
     private void editModal(ModalInteraction event, String data)
     {
         // Parse quote ID
@@ -352,7 +341,6 @@ public class Quote extends Cog
         registerCmdFunc(this::rmQuote, "rem-quote");
 
         registerBtnFunc(this::editBtn, EDIT_BTN);
-        registerBtnFunc(this::rmBtn, RM_BTN);
 
         registerModal(this::editModal, QUOTE_MODAL);
         return out;
