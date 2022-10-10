@@ -84,7 +84,8 @@ public class Quote extends Cog
 
         try
         {
-            event.createFollowupMessageBuilder().addEmbed(new EmbedBuilder().addField("Quote: " + nick, content))
+            event.createFollowupMessageBuilder()
+                    .addEmbed(new EmbedBuilder().addField("Quote: " + nick, content).setFooter("Quote ID: " + quoteId))
                     .addComponents(getQuoteBtns(quoteId)).send().get();
         }
         catch(Exception e)

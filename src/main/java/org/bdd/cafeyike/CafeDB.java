@@ -1,6 +1,8 @@
 package org.bdd.cafeyike;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.*;
@@ -83,7 +85,8 @@ public class CafeDB
     {
         try
         {
-            return Files.readString(Path.of(path));
+            InputStream is = getClass().getResourceAsStream("/sql/" + path);
+            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
         }
         catch(IOException e)
         {
@@ -94,28 +97,28 @@ public class CafeDB
     private void initYikeTable() throws SQLException
     {
         Statement s = conn.createStatement();
-        s.execute(loadStatement("sql/yikeSchema.sql"));
+        s.execute(loadStatement("yikeSchema.sql"));
 
-        ADD_YIKE_ST = loadStatement("sql/addYikeLog.sql");
-        INC_YIKE_ST = loadStatement("sql/incYike.sql");
-        SET_YIKE_ST = loadStatement("sql/setYikes.sql");
-        REM_YIKE_ST = loadStatement("sql/remYike.sql");
-        GET_YIKE_FOR_USER_ST = loadStatement("sql/getYikesForUser.sql");
-        GET_YIKE_FOR_SERVER_ST = loadStatement("sql/getYikesForServer.sql");
+        ADD_YIKE_ST = loadStatement("addYikeLog.sql");
+        INC_YIKE_ST = loadStatement("incYike.sql");
+        SET_YIKE_ST = loadStatement("setYikes.sql");
+        REM_YIKE_ST = loadStatement("remYike.sql");
+        GET_YIKE_FOR_USER_ST = loadStatement("getYikesForUser.sql");
+        GET_YIKE_FOR_SERVER_ST = loadStatement("getYikesForServer.sql");
     }
 
     private void initQuoteTable() throws SQLException
     {
         Statement s = conn.createStatement();
 
-        s.execute(loadStatement("sql/quoteSchema.sql"));
+        s.execute(loadStatement("quoteSchema.sql"));
 
-        ADD_QUOTE_ST = loadStatement("sql/addQuote.sql");
-        GET_QUOTES_ST = loadStatement("sql/getQuotes.sql");
-        GET_QUOTE_BY_ID_ST = loadStatement("sql/getQuoteByID.sql");
-        EDIT_QUOTE_ST = loadStatement("sql/editQuote.sql");
-        EDIT_QUOTE_TS_ST = loadStatement("sql/editQuoteTs.sql");
-        RM_QUOTE_ST = loadStatement("sql/rmQuote.sql");
+        ADD_QUOTE_ST = loadStatement("addQuote.sql");
+        GET_QUOTES_ST = loadStatement("getQuotes.sql");
+        GET_QUOTE_BY_ID_ST = loadStatement("getQuoteByID.sql");
+        EDIT_QUOTE_ST = loadStatement("editQuote.sql");
+        EDIT_QUOTE_TS_ST = loadStatement("editQuoteTs.sql");
+        RM_QUOTE_ST = loadStatement("rmQuote.sql");
     }
 
     private static PreparedStatement prepare(String statement) throws SQLException
