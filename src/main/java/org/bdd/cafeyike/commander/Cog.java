@@ -3,9 +3,15 @@ package org.bdd.cafeyike.commander;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.javacord.api.DiscordApi;
-import org.javacord.api.interaction.ButtonInteraction;
-import org.javacord.api.interaction.SlashCommandBuilder;
+import org.bdd.cafeyike.commander.exceptions.UsageError;
+
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 
 /**
  * Contains one or more internal commands Used to group commands into a single
@@ -17,7 +23,7 @@ public abstract class Cog
     private LinkedList<Btn> butttons = new LinkedList<>();
     private LinkedList<Mdl> modals = new LinkedList<>();
 
-    public abstract List<SlashCommandBuilder> buildCommands();
+    public abstract List<CommandData> buildCommands();
 
     public void registerCmdFunc(Cmd.Func func, String name)
     {
@@ -59,13 +65,26 @@ public abstract class Cog
         // Pass
     }
 
-    public void registerListeners(DiscordApi api)
+    public void registerListeners(JDA api)
     {
         // Pass
     }
 
-    private void noop(ButtonInteraction event, String data)
+    private void noop(ButtonInteractionEvent event, String data)
     {
 
+    }
+
+    public void sendError(IReplyCallback event, String msg)
+    {
+        event.replyEmbeds(new EmbedBuilder().setTitle("Error").setDescription(msg).build()).setEphemeral(true).queue();
+        throw new UsageError(msg);
+    }
+
+    public void sendFollowError(InteractionHook hook, String msg)
+    {
+        hook.sendMessageEmbeds(new EmbedBuilder().setTitle("Error").setDescription(msg).build()).setEphemeral(true)
+                .queue();
+        throw new UsageError(msg);
     }
 }

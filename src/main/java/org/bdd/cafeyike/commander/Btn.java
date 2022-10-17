@@ -3,11 +3,12 @@ package org.bdd.cafeyike.commander;
 import java.util.function.BiConsumer;
 
 import org.bdd.cafeyike.commander.exceptions.CmdError;
-import org.javacord.api.interaction.ButtonInteraction;
+
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 
 public class Btn
 {
-    public interface Func extends BiConsumer<ButtonInteraction, String>
+    public interface Func extends BiConsumer<ButtonInteractionEvent, String>
     {
     }
 

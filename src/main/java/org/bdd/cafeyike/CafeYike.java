@@ -6,16 +6,19 @@ import org.bdd.cafeyike.commander.exceptions.BotError;
 import org.bdd.cafeyike.commands.Quote;
 import org.bdd.cafeyike.commands.Yike;
 import org.bdd.cafeyike.commands.music.Music;
-import org.javacord.api.entity.intent.Intent;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import net.dv8tion.jda.api.requests.GatewayIntent;
 
 public class CafeYike
 {
     private static final Logger log = LoggerFactory.getLogger(CafeYike.class);
 
-    private static final Intent[] intents = { Intent.GUILD_MEMBERS, Intent.GUILDS, Intent.GUILD_MESSAGES,
-            Intent.GUILD_EMOJIS, Intent.GUILD_BANS, Intent.GUILD_MESSAGE_REACTIONS, Intent.GUILD_VOICE_STATES
+    private static final GatewayIntent[] intents = { GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGES,
+            GatewayIntent.GUILD_EMOJIS_AND_STICKERS, GatewayIntent.GUILD_BANS, GatewayIntent.GUILD_MESSAGE_REACTIONS,
+            GatewayIntent.GUILD_VOICE_STATES
     };
 
     public static final String YIKE_LOG = "./dat/yikelog.json";
@@ -50,7 +53,7 @@ public class CafeYike
         log.info("Initializing Bot");
         try
         {
-            bot.init("_", intents);
+            bot.init(intents);
         }
         catch(BotError botError)
         {

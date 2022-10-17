@@ -1,6 +1,6 @@
 package org.bdd.cafeyike.commander.utils;
 
-import org.javacord.api.entity.message.Message;
+import net.dv8tion.jda.api.entities.Message;
 
 /**
  * Helper to automatically delete a message after a time delay and run a specified callback
@@ -22,7 +22,7 @@ public class MsgDeleteAfter extends Thread
             //PASS
         }
 
-        m.delete();
+        m.delete().queue();
 
         if(cb != null)
         {

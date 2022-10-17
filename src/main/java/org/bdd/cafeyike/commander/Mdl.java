@@ -3,11 +3,12 @@ package org.bdd.cafeyike.commander;
 import java.util.function.BiConsumer;
 
 import org.bdd.cafeyike.commander.exceptions.CmdError;
-import org.javacord.api.interaction.ModalInteraction;
+
+import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 
 public class Mdl
 {
-    public interface Func extends BiConsumer<ModalInteraction, String>
+    public interface Func extends BiConsumer<ModalInteractionEvent, String>
     {
     }
 

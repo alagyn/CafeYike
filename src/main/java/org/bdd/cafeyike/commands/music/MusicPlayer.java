@@ -1,21 +1,12 @@
 package org.bdd.cafeyike.commands.music;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
 
 import org.bdd.cafeyike.commander.Bot;
 import org.bdd.cafeyike.commander.exceptions.CmdError;
-import org.javacord.api.DiscordApi;
-import org.javacord.api.audio.AudioSource;
-import org.javacord.api.audio.AudioSourceBase;
-import org.javacord.api.entity.channel.ServerVoiceChannel;
-import org.javacord.api.entity.channel.TextChannel;
-import org.javacord.api.entity.message.Message;
-import org.javacord.api.entity.message.MessageBuilder;
-import org.javacord.api.entity.message.component.ActionRow;
-import org.javacord.api.entity.message.component.Button;
-import org.javacord.api.entity.message.embed.EmbedBuilder;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEvent;
@@ -30,18 +21,26 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
+
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.audio.AudioSendHandler;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MusicPlayer extends AudioSourceBase implements AudioEventListener
+public class MusicPlayer implements AudioEventListener, AudioSendHandler
 {
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     public final AudioPlayer player;
     private AudioFrame lastFrame;
     public Message nowPlayingMsg;
-    private final ServerVoiceChannel voiceChannel;
-    private final TextChannel textChannel;
+    private final MessageChannel textChannel;
     private long serverId;
 
     private boolean endOfQueue;
@@ -52,13 +51,10 @@ public class MusicPlayer extends AudioSourceBase implements AudioEventListener
 
     private AudioTrack currentTrack;
 
-    public MusicPlayer(DiscordApi api, AudioPlayer audioPlayer, Message msg, ServerVoiceChannel voiceChannel,
-            TextChannel textChannel, long serverId)
+    public MusicPlayer(AudioPlayer audioPlayer, Message msg, MessageChannel textChannel, long serverId)
     {
-        super(api);
         this.player = audioPlayer;
         this.nowPlayingMsg = msg;
-        this.voiceChannel = voiceChannel;
         this.textChannel = textChannel;
         trackQueue = new ArrayList<>();
         curIdx = -1;
@@ -118,42 +114,13 @@ public class MusicPlayer extends AudioSourceBase implements AudioEventListener
         return this.looping;
     }
 
-    @Override
-    public synchronized byte[] getNextFrame()
-    {
-        if(lastFrame == null)
-        {
-            return null;
-        }
-        return applyTransformers(lastFrame.getData());
-    }
-
-    @Override
-    public synchronized boolean hasNextFrame()
-    {
-        lastFrame = player.provide();
-        return lastFrame != null;
-    }
-
-    @Override
-    public boolean hasFinished()
-    {
-        return false;
-    }
-
-    @Override
-    public synchronized AudioSource copy()
-    {
-        return new MusicPlayer(getApi(), player, nowPlayingMsg, voiceChannel, textChannel, serverId);
-    }
-
     public ActionRow getButtons()
     {
-        return ActionRow.of(Button.secondary(Bot.makeId(Music.PREV_BTN, serverId), null, "⏮"),
-                Button.secondary(Bot.makeId(Music.PLAY_BTN, serverId), null, "⏯"),
-                Button.secondary(Bot.makeId(Music.NEXT_BTN, serverId), null, "⏭"),
-                Button.secondary(Bot.makeId(Music.SHUF_BTN, serverId), null, "🔀"),
-                Button.secondary(Bot.makeId(Music.LOOP_BTN, serverId), null, "🔁"));
+        return ActionRow.of(Button.secondary(Bot.makeId(Music.PREV_BTN, serverId), Emoji.fromUnicode("⏮")),
+                Button.secondary(Bot.makeId(Music.PLAY_BTN, serverId), Emoji.fromUnicode("⏯")),
+                Button.secondary(Bot.makeId(Music.NEXT_BTN, serverId), Emoji.fromUnicode("⏭")),
+                Button.secondary(Bot.makeId(Music.SHUF_BTN, serverId), Emoji.fromUnicode("🔀")),
+                Button.secondary(Bot.makeId(Music.LOOP_BTN, serverId), Emoji.fromUnicode("🔁")));
     }
 
     private String embedTitle()
@@ -180,18 +147,19 @@ public class MusicPlayer extends AudioSourceBase implements AudioEventListener
 
     public synchronized void makeNewNowPlaying()
     {
-        Message newMsg = new MessageBuilder()
-                .addEmbed(new EmbedBuilder().addField(embedTitle(), currentTrack.getInfo().title))
-                .addComponents(getButtons()).send(textChannel).join();
+        nowPlayingMsg.delete().queue();
 
-        nowPlayingMsg.delete();
-        nowPlayingMsg = newMsg;
+        nowPlayingMsg = textChannel
+                .sendMessageEmbeds(
+                        new EmbedBuilder().setTitle(embedTitle()).setDescription(currentTrack.getInfo().title).build())
+                .addComponents(getButtons()).complete();
     }
 
     public synchronized void setEndOfQueue()
     {
         endOfQueue = true;
-        nowPlayingMsg.edit(new EmbedBuilder().addField(embedTitle(), "End of Queue"));
+        nowPlayingMsg
+                .editMessageEmbeds(new EmbedBuilder().setTitle(embedTitle()).setDescription("End of Queue").build());
     }
 
     public synchronized void startNext()
@@ -348,5 +316,18 @@ public class MusicPlayer extends AudioSourceBase implements AudioEventListener
             TrackStuckEvent stuck = (TrackStuckEvent) event;
             onTrackStuck(event.player, stuck.track, stuck.thresholdMs, stuck.stackTrace);
         }
+    }
+
+    @Override
+    public boolean canProvide()
+    {
+        lastFrame = player.provide();
+        return lastFrame != null;
+    }
+
+    @Override
+    public ByteBuffer provide20MsAudio()
+    {
+        return ByteBuffer.wrap(lastFrame.getData());
     }
 }

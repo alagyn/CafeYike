@@ -14,5 +14,7 @@
         <appender-ref ref="FILE" />
     </root>
 
+    <!--
     <logger name="org.javacord" level="OFF" />
+    -->
 </configuration>

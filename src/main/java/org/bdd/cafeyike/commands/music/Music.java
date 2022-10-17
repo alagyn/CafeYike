@@ -1,25 +1,9 @@
 package org.bdd.cafeyike.commands.music;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.bdd.cafeyike.commander.Bot;
 import org.bdd.cafeyike.commander.Cog;
-import org.javacord.api.audio.AudioConnection;
-import org.javacord.api.entity.channel.ServerVoiceChannel;
-import org.javacord.api.entity.channel.TextChannel;
-import org.javacord.api.entity.message.Message;
-import org.javacord.api.entity.message.MessageFlag;
-import org.javacord.api.entity.message.embed.EmbedBuilder;
-import org.javacord.api.entity.server.Server;
-import org.javacord.api.entity.user.User;
-import org.javacord.api.interaction.ButtonInteraction;
-import org.javacord.api.interaction.SlashCommand;
-import org.javacord.api.interaction.SlashCommandBuilder;
-import org.javacord.api.interaction.SlashCommandInteraction;
-import org.javacord.api.interaction.SlashCommandOption;
-import org.javacord.api.interaction.SlashCommandOptionType;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
@@ -29,6 +13,21 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.managers.AudioManager;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,9 +36,6 @@ public class Music extends Cog
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     private AudioPlayerManager playerManager;
-
-    // Maps ServerID -> AudioConnection
-    private HashMap<Long, AudioConnection> connections;
 
     public static final String PREV_BTN = "prev";
     public static final String NEXT_BTN = "next";
@@ -51,21 +47,19 @@ public class Music extends Cog
     {
         playerManager = new DefaultAudioPlayerManager();
         AudioSourceManagers.registerRemoteSources(playerManager);
-
-        connections = new HashMap<>();
     }
 
     @Override
-    public List<SlashCommandBuilder> buildCommands()
+    public List<CommandData> buildCommands()
     {
-        LinkedList<SlashCommandBuilder> out = new LinkedList<>();
+        LinkedList<CommandData> out = new LinkedList<>();
 
-        out.add(SlashCommand.with("play", "Start/Queue a video to play").addOption(SlashCommandOption
-                .create(SlashCommandOptionType.STRING, "query", "The search query or url to play", true)));
+        out.add(Commands.slash("play", "Start/Queue a video to play").addOption(OptionType.STRING, "query",
+                "The search query or url to play", true));
 
         registerCmdFunc(this::playCmd, "play");
 
-        out.add(SlashCommand.with("leave", "Stop playing and leave the voice chat"));
+        out.add(Commands.slash("leave", "Stop playing and leave the voice chat"));
 
         registerCmdFunc(this::leaveCmd, "leave");
 
@@ -78,83 +72,81 @@ public class Music extends Cog
         return out;
     }
 
-    private void leaveCmd(SlashCommandInteraction event)
+    private void leaveCmd(SlashCommandInteractionEvent event)
     {
-        Server serv = event.getServer().orElse(null);
+        Guild serv = event.getGuild();
         if(serv == null)
         {
-            Bot.sendError(event, "Not in a server");
+            sendError(event, "Not in a server");
         }
 
-        AudioConnection ac = connections.remove(serv.getId());
+        AudioManager am = serv.getAudioManager();
 
-        if(ac != null)
+        if(am.isConnected())
         {
-            MusicPlayer mp = (MusicPlayer) ac.getAudioSource().get();
+            MusicPlayer mp = (MusicPlayer) am.getSendingHandler();
             mp.nowPlayingMsg.delete();
             mp.stop();
-            ac.close();
-            event.createImmediateResponder().addEmbed(new EmbedBuilder().addField("Music", "Goodbye")).respond();
+            event.replyEmbeds(new EmbedBuilder().setTitle("Music").setDescription("Goodbye").build()).queue();
         }
         else
         {
-            event.createImmediateResponder().addEmbed(new EmbedBuilder().addField("Error", "Nothing to do"))
-                    .setFlags(MessageFlag.EPHEMERAL).respond();
+            event.replyEmbeds(new EmbedBuilder().setTitle("Error").setDescription("Nothing to do").build())
+                    .setEphemeral(true).queue();
         }
     }
 
-    private void playCmd(SlashCommandInteraction event)
+    private void playCmd(SlashCommandInteractionEvent event)
     {
-        User u = event.getUser();
-        Server serv = event.getServer().orElse(null);
+        Member u = event.getMember();
+        Guild serv = event.getGuild();
 
         if(serv == null)
         {
-            Bot.sendError(event, "Not in a server");
+            sendError(event, "Not in a server");
         }
 
-        ServerVoiceChannel voiceChannel = u.getConnectedVoiceChannel(serv).orElse(null);
-        TextChannel textChannel = event.getChannel().orElse(null);
+        VoiceChannel voiceChannel = u.getVoiceState().getChannel().asVoiceChannel();
+        MessageChannel textChannel = event.getChannel();
 
         if(voiceChannel == null)
         {
-            Bot.sendError(event, "Not in a voice chat");
+            sendError(event, "Not in a voice chat");
         }
 
         if(textChannel == null)
         {
-            Bot.sendError(event, "Invalid text channel");
+            sendError(event, "Invalid text channel");
         }
 
-        String query = event.getOptionStringValueByIndex(0).orElse("");
+        String query = event.getOption("query").getAsString();
 
         if(query.isEmpty())
         {
             // Empty query here is error
             // pause/resume/etc will be buttons
-            Bot.sendError(event, "Empty query");
+            sendError(event, "Empty query");
         }
 
-        event.respondLater();
+        event.deferReply();
+        InteractionHook hook = event.getHook();
 
-        AudioConnection ac = connections.get(serv.getId());
+        AudioManager am = serv.getAudioManager();
 
-        if(ac == null)
+        if(!am.isConnected())
         {
-            ac = voiceChannel.connect().join();
+            Message m = hook
+                    .sendMessageEmbeds(new EmbedBuilder().setTitle("Now Playing").setDescription("Loading...").build())
+                    .complete();
             AudioPlayer player = playerManager.createPlayer();
-            // TODO add control buttons here?
-            Message m = event.createFollowupMessageBuilder()
-                    .addEmbed(new EmbedBuilder().addField("Now Playing", "Loading...")).send().join();
             // Create an audio source and add it to the audio connection's queue
-            MusicPlayer source = new MusicPlayer(Bot.inst.getApi(), player, m, voiceChannel, textChannel, serv.getId());
-            // Source gets set as a listener to the player in its constructor
-            ac.setAudioSource(source);
-
-            connections.put(serv.getId(), ac);
+            MusicPlayer mp = new MusicPlayer(player, m, textChannel, serv.getIdLong());
+            am.setSendingHandler(mp);
+            am.openAudioConnection(voiceChannel);
         }
 
-        MusicPlayer musicPlayer = (MusicPlayer) ac.getAudioSource().get();
+        // This has to be final to store the up-value
+        final MusicPlayer musicPlayer = (MusicPlayer) am.getSendingHandler();
 
         playerManager.loadItem(query, new AudioLoadResultHandler()
         {
@@ -171,8 +163,9 @@ public class Music extends Cog
                 }
                 else
                 {
-                    event.createFollowupMessageBuilder()
-                            .addEmbed(new EmbedBuilder().addField("Added to Queue", track.getInfo().title)).send();
+                    hook.sendMessageEmbeds(
+                            new EmbedBuilder().setTitle("Added to Queue").setDescription(track.getInfo().title).build())
+                            .queue();
                     musicPlayer.makeNewNowPlaying();
                 }
 
@@ -187,8 +180,8 @@ public class Music extends Cog
                 text.append("Playlist: ").append(playlist.getName()).append("\n");
 
                 text.append(len).append(" ").append(len == 1 ? "item." : "items.");
-                event.createFollowupMessageBuilder()
-                        .addEmbed(new EmbedBuilder().addField("Added to Queue", text.toString()));
+                hook.sendMessageEmbeds(
+                        new EmbedBuilder().setTitle("Added to Queue").setDescription(text.toString()).build()).queue();
 
                 if(len <= 0)
                 {
@@ -215,7 +208,7 @@ public class Music extends Cog
             {
                 log.warn("No matches found");
 
-                Bot.sendFollowError(event, "No matches found");
+                sendFollowError(hook, "No matches found");
 
                 musicPlayer.makeNewNowPlaying();
             }
@@ -225,7 +218,7 @@ public class Music extends Cog
             {
                 // Notify the user that everything exploded
                 log.warn("Load failed: ", throwable);
-                Bot.sendFollowError(event, "Load failed");
+                sendFollowError(hook, "Load failed");
 
                 musicPlayer.makeNewNowPlaying();
             }
@@ -233,109 +226,64 @@ public class Music extends Cog
         });
     }
 
-    private void nextBtn(ButtonInteraction event, String data)
+    private MusicPlayer getPlayer(ButtonInteractionEvent event)
     {
-        long serverId = Long.parseLong(data);
+        AudioManager am = event.getGuild().getAudioManager();
 
-        AudioConnection ac = connections.get(serverId);
-
-        if(ac == null)
+        if(!am.isConnected())
         {
             event.getMessage().delete();
-            event.createImmediateResponder()
-                    .addEmbed(new EmbedBuilder().addField("Error", "This player does not exist"))
-                    .setFlags(MessageFlag.EPHEMERAL).respond();
-            return;
+            event.replyEmbeds(new EmbedBuilder().setTitle("Error").setDescription("This player does not exist").build())
+                    .setEphemeral(true).queue();
+
+            return null;
         }
 
-        event.acknowledge();
-        ((MusicPlayer) ac.getAudioSource().get()).startNext();
+        return (MusicPlayer) am.getSendingHandler();
     }
 
-    private void prevBtn(ButtonInteraction event, String data)
+    private void nextBtn(ButtonInteractionEvent event, String data)
     {
-        long serverId = Long.parseLong(data);
-
-        AudioConnection ac = connections.get(serverId);
-
-        if(ac == null)
+        MusicPlayer mp = getPlayer(event);
+        if(mp != null)
         {
-            event.getMessage().delete();
-            event.createImmediateResponder()
-                    .addEmbed(new EmbedBuilder().addField("Error", "This player does not exist"))
-                    .setFlags(MessageFlag.EPHEMERAL).respond();
-            return;
+            mp.startNext();
         }
-
-        event.acknowledge();
-
-        MusicPlayer mp = (MusicPlayer) ac.getAudioSource().get();
-
-        mp.startPrev();
     }
 
-    private void playBtn(ButtonInteraction event, String data)
+    private void prevBtn(ButtonInteractionEvent event, String data)
     {
-        long serverId = Long.parseLong(data);
-
-        AudioConnection ac = connections.get(serverId);
-        if(ac == null)
+        MusicPlayer mp = getPlayer(event);
+        if(mp != null)
         {
-            event.getMessage().delete();
-            event.createImmediateResponder()
-                    .addEmbed(new EmbedBuilder().addField("Error", "This player does not exist"))
-                    .setFlags(MessageFlag.EPHEMERAL).respond();
-            return;
+            mp.startPrev();
         }
-
-        event.acknowledge();
-
-        MusicPlayer mp = (MusicPlayer) ac.getAudioSource().get();
-
-        mp.player.setPaused(!mp.player.isPaused());
     }
 
-    private void loopBtn(ButtonInteraction event, String data)
+    private void playBtn(ButtonInteractionEvent event, String data)
     {
-        long serverId = Long.parseLong(data);
-
-        AudioConnection ac = connections.get(serverId);
-
-        if(ac == null)
+        MusicPlayer mp = getPlayer(event);
+        if(mp != null)
         {
-            event.getMessage().delete();
-            event.createImmediateResponder()
-                    .addEmbed(new EmbedBuilder().addField("Error", "This player does not exist"))
-                    .setFlags(MessageFlag.EPHEMERAL).respond();
-            return;
+            mp.player.setPaused(!mp.player.isPaused());
         }
-
-        event.acknowledge();
-
-        MusicPlayer mp = (MusicPlayer) ac.getAudioSource().get();
-
-        mp.setLooping(!mp.isLooping());
     }
 
-    private void shuffleBtn(ButtonInteraction event, String data)
+    private void loopBtn(ButtonInteractionEvent event, String data)
     {
-        long serverId = Long.parseLong(data);
-
-        AudioConnection ac = connections.get(serverId);
-
-        if(ac == null)
+        MusicPlayer mp = getPlayer(event);
+        if(mp != null)
         {
-            event.getMessage().delete();
-            event.createImmediateResponder()
-                    .addEmbed(new EmbedBuilder().addField("Error", "This player does not exist"))
-                    .setFlags(MessageFlag.EPHEMERAL).respond();
-            return;
+            mp.setLooping(!mp.isLooping());
         }
+    }
 
-        event.acknowledge();
-
-        MusicPlayer mp = (MusicPlayer) ac.getAudioSource().get();
-
-        mp.shuffle();
+    private void shuffleBtn(ButtonInteractionEvent event, String data)
+    {
+        MusicPlayer mp = getPlayer(event);
+        if(mp != null)
+        {
+            mp.shuffle();
+        }
     }
 }

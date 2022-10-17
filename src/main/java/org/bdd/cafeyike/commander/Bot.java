@@ -2,23 +2,21 @@ package org.bdd.cafeyike.commander;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Properties;
 
 import org.bdd.cafeyike.commander.exceptions.BotError;
 import org.bdd.cafeyike.commander.exceptions.CmdError;
 import org.bdd.cafeyike.commander.exceptions.UsageError;
-import org.javacord.api.DiscordApi;
-import org.javacord.api.DiscordApiBuilder;
-import org.javacord.api.entity.intent.Intent;
-import org.javacord.api.entity.message.MessageFlag;
-import org.javacord.api.entity.message.embed.EmbedBuilder;
-import org.javacord.api.entity.server.Server;
-import org.javacord.api.entity.user.User;
-import org.javacord.api.entity.user.UserStatus;
-import org.javacord.api.interaction.Interaction;
-import org.javacord.api.interaction.SlashCommandInteraction;
-import org.javacord.api.listener.interaction.InteractionCreateListener;
-import org.javacord.api.util.event.ListenerManager;
+import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.OnlineStatus;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.SelfUser;
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.interaction.GenericInteractionCreateEvent;
+import net.dv8tion.jda.api.interactions.Interaction;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.requests.GatewayIntent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,11 +28,11 @@ public class Bot
     private final Properties config;
 
     private boolean initted = false;
-    private DiscordApi api;
-    private final DiscordApiBuilder temp_builder;
+    private JDA api;
+    private final String token;
 
     private CommandListener cl = null;
-    ListenerManager<InteractionCreateListener> listenManager;
+    //ListenerManager<InteractionCreateListener> listenManager;
 
     private Bot()
     {
@@ -49,13 +47,11 @@ public class Bot
             System.out.println("Cannot load config file");
             System.exit(0);
         }
-        String token = config.getProperty("DISCORD_TOKEN");
+        token = config.getProperty("DISCORD_TOKEN");
         if(token == null || token.isEmpty())
         {
             throw new CmdError("Bot() login token not defined, system.config: DISCORD_TOKEN = [token]");
         }
-
-        temp_builder = new DiscordApiBuilder().setToken(token);
 
         cl = new CommandListener();
     }
@@ -75,7 +71,7 @@ public class Bot
         cl.addCog(cog);
     }
 
-    public void init(String prefix, Intent[] intents) throws BotError
+    public void init(GatewayIntent... intents) throws BotError
     {
         if(initted)
         {
@@ -84,13 +80,11 @@ public class Bot
 
         initted = true;
 
-        temp_builder.setIntents(intents);
-
-        api = temp_builder.login().join();
+        JDABuilder temp_builder = JDABuilder.createDefault(token, Arrays.asList(intents));
+        temp_builder.addEventListeners(cl);
+        api = temp_builder.build();
 
         cl.registerCommands(api);
-
-        listenManager = api.addInteractionCreateListener(cl);
 
         Runtime.getRuntime().addShutdownHook(new Thread()
         {
@@ -100,11 +94,11 @@ public class Bot
             }
         });
 
-        User me = api.getYourself();
-        log.info("Bot {} is now online", me.getDiscriminatedName());
+        SelfUser me = api.getSelfUser();
+        log.info("Bot {} is now online", me.getAsTag());
     }
 
-    public DiscordApi getApi()
+    public JDA getApi()
     {
         return api;
     }
@@ -113,42 +107,8 @@ public class Bot
     {
         log.info("Shutting down Command Listener");
         cl.shutdown();
-        api.updateStatus(UserStatus.OFFLINE);
+        api.getPresence().setPresence(OnlineStatus.OFFLINE, false);
         log.info("Exitting");
-    }
-
-    public static String getNickname(User user, Server serv)
-    {
-        if(serv == null)
-        {
-            return user.getName();
-        }
-
-        return user.getDisplayName(serv);
-    }
-
-    public static void sendError(Interaction event, String message)
-    {
-        event.createImmediateResponder().addEmbed(new EmbedBuilder().addField("Error", message))
-                .setFlags(MessageFlag.EPHEMERAL).respond();
-        throw new UsageError(message);
-    }
-
-    public static void sendError(SlashCommandInteraction event, String message)
-    {
-        sendError((Interaction) event, message);
-    }
-
-    public static void sendFollowError(Interaction event, String message)
-    {
-        event.createFollowupMessageBuilder().addEmbed(new EmbedBuilder().addField("Error", message))
-                .setFlags(MessageFlag.EPHEMERAL).send();
-        throw new UsageError(message);
-    }
-
-    public static void sendFollowError(SlashCommandInteraction event, String message)
-    {
-        sendFollowError((Interaction) event, message);
     }
 
     public static String makeId(String prefix, Object data)
@@ -157,4 +117,5 @@ public class Bot
         out.append(prefix).append(":").append(data.toString());
         return out.toString();
     }
+
 }

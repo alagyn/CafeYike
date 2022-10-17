@@ -12,29 +12,32 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import org.bdd.cafeyike.CafeDB;
 import org.bdd.cafeyike.CafeDB.QuoteEntry;
 import org.bdd.cafeyike.commander.Bot;
 import org.bdd.cafeyike.commander.Cog;
 import org.bdd.cafeyike.commander.exceptions.CmdError;
-import org.javacord.api.entity.message.component.ActionRow;
-import org.javacord.api.entity.message.component.Button;
-import org.javacord.api.entity.message.component.TextInput;
-import org.javacord.api.entity.message.component.TextInputStyle;
-import org.javacord.api.entity.message.embed.EmbedBuilder;
-import org.javacord.api.entity.server.Server;
-import org.javacord.api.entity.user.User;
-import org.javacord.api.interaction.ButtonInteraction;
-import org.javacord.api.interaction.Interaction;
-import org.javacord.api.interaction.ModalInteraction;
-import org.javacord.api.interaction.SlashCommand;
-import org.javacord.api.interaction.SlashCommandBuilder;
-import org.javacord.api.interaction.SlashCommandInteraction;
-import org.javacord.api.interaction.SlashCommandOption;
-import org.javacord.api.interaction.SlashCommandOptionType;
+import org.bdd.cafeyike.commander.utils.DoAfter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.Modal;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.text.TextInput;
+import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
+import net.dv8tion.jda.api.utils.FileUpload;
 
 public class Quote extends Cog
 {
@@ -42,111 +45,100 @@ public class Quote extends Cog
 
     private static final String QUOTE_MODAL = "quoteM";
     private static final String EDIT_BTN = "edit";
-    private static final String RM_BTN = "rm";
 
     private static final String STR_DATE_FMT = "MM/DD/YY HH:MM";
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("MM/dd/yy HH:mm");
 
+    private final int quoteEditTimeSec;
+
     public Quote()
     {
+        quoteEditTimeSec = Bot.getIntConfig("quoteEditTimeSec");
     }
 
-    public void addQuote(SlashCommandInteraction event)
+    public void addQuote(SlashCommandInteractionEvent event)
     {
-        User user = event.getOptionUserValueByIndex(0).get();
+        Member user = event.getOption("user").getAsMember();
 
         if(user == null)
         {
-            Bot.sendError(event, "Cannot quote user");
+            sendError(event, "Cannot quote user");
         }
 
-        String content = event.getOptionStringValueByIndex(1).get();
+        String content = event.getOption("content").getAsString();
 
         if(content == null || content.isEmpty())
         {
-            Bot.sendError(event, "Quote cannot be empty");
+            sendError(event, "Quote cannot be empty");
         }
 
-        event.respondLater();
+        event.deferReply();
+        InteractionHook hook = event.getHook();
 
-        Server serv = event.getServer().get();
-        String nick = "";
-        if(serv == null)
-        {
-            nick = user.getName();
-        }
-        else
-        {
-            nick = user.getDisplayName(serv);
-        }
+        long quoteId = CafeDB.addQuote(user.getIdLong(), content);
 
-        long quoteId = CafeDB.addQuote(user.getId(), content);
-
-        try
+        EmbedBuilder b = new EmbedBuilder().addField("Quote: " + user.getEffectiveName(), content, false);
+        Message m = hook.sendMessageEmbeds(b.build()).addActionRow(getEditBtn(quoteId)).complete();
+        new DoAfter(quoteEditTimeSec, x ->
         {
-            event.createFollowupMessageBuilder()
-                    .addEmbed(new EmbedBuilder().addField("Quote: " + nick, content).setFooter("Quote ID: " + quoteId))
-                    .addComponents(getQuoteBtns(quoteId)).send().get();
-        }
-        catch(Exception e)
-        {
-            Bot.sendFollowError(event, "Quote added, but cannot get message: " + e.getMessage());
-        }
+            m.editMessageComponents(new ArrayList<>()).queue();
+        });
     }
 
-    public ActionRow getQuoteBtns(long quoteId)
+    private Button getEditBtn(long quoteId)
     {
-        return ActionRow.of(Button.primary(Bot.makeId(EDIT_BTN, quoteId), "Edit"));
+        return Button.primary(Bot.makeId(EDIT_BTN, quoteId), "Edit");
     }
 
-    public void getQuotes(SlashCommandInteraction event)
+    public void getQuotes(SlashCommandInteractionEvent event)
     {
-        User singleUser = event.getOptionUserValueByName("user").orElse(null);
+        Member singleUser = event.getOption("user").getAsMember();
 
         List<QuoteEntry> quotes = null;
         String filename = "";
 
-        Server serv = event.getServer().orElse(null);
+        Guild serv = event.getGuild();
 
-        boolean showIds = event.getOptionBooleanValueByName("show-ids").orElse(false);
+        boolean showIds = event.getOption("show-ids").getAsBoolean();
 
-        event.respondLater();
+        event.deferReply();
+        InteractionHook hook = event.getHook();
 
         if(singleUser != null)
         {
-            ArrayList<User> users = new ArrayList<>();
+            ArrayList<Member> users = new ArrayList<>();
             users.add(singleUser);
             // Get for a single user
             quotes = CafeDB.getQuotes(users);
-            filename = singleUser.getIdAsString() + "_quotes.txt";
+            filename = singleUser.getId() + "_quotes.txt";
         }
         else
         {
             // Get for the server
             if(serv == null)
             {
-                Bot.sendFollowError(event, "Cannot get quotes, not in server and no user supplied");
+                sendFollowError(hook, "Cannot get quotes, not in server and no user supplied");
             }
 
-            Collection<User> users = serv.getMembers();
+            Collection<Member> users = serv.getMembers();
 
             quotes = CafeDB.getQuotes(users);
 
-            filename = serv.getIdAsString() + "_quotes.txt";
-        }
-
-        HashMap<Long, String> nicknames = new HashMap<>();
-        if(singleUser != null)
-        {
-            String nick = Bot.getNickname(singleUser, serv);
-            nicknames.put(singleUser.getId(), nick);
+            filename = serv.getId() + "_quotes.txt";
         }
 
         if(quotes.isEmpty())
         {
-            event.createFollowupMessageBuilder().addEmbed(new EmbedBuilder().addField("Oops", "No quotes to be found"))
-                    .send();
+            hook.sendMessageEmbeds(new EmbedBuilder().addField("Oops", "No quotes to be found", false).build()).queue();
             return;
+        }
+
+        HashMap<Long, String> nicknames = new HashMap<>();
+
+        String singleNick = null;
+        if(singleUser != null)
+        {
+            singleNick = singleUser.getEffectiveName();
         }
 
         try
@@ -154,44 +146,28 @@ public class Quote extends Cog
             FileWriter writer = new FileWriter(filename);
             for(QuoteEntry q : quotes)
             {
-                StringBuilder s = new StringBuilder();
-                User u = singleUser;
-                if(u == null || !nicknames.containsKey(q.userId))
+                String nick = singleNick;
+                if(nick == null)
                 {
-                    try
-                    {
-                        u = Bot.inst.getApi().getUserById(q.userId).get();
-                    }
-                    catch(InterruptedException e)
-                    {
-                        log.debug("getQuote() Skipping user {}, interrupted", q.userId);
-                        continue;
-                    }
-                    catch(ExecutionException e)
-                    {
-                        log.debug("getQuote() Skipping user {}, execution error: {}", q.userId, e.getMessage());
-                        continue;
-                    }
-                }
-
-                if(u != null)
-                {
-                    String nick = nicknames.get(u.getId());
+                    nick = nicknames.get(q.userId);
                     if(nick == null)
                     {
-                        nick = Bot.getNickname(u, serv);
+                        Member m = serv.getMemberById(q.userId);
+                        nick = m.getEffectiveName();
+                        nicknames.put(q.userId, nick);
                     }
-
-                    if(showIds)
-                    {
-                        s.append("ID: ").append(q.quoteId).append("\n");
-                    }
-                    s.append(nick);
-                    s.append(" ( ").append(q.timestamp.toString()).append(" )\n");
-                    s.append(q.content).append("\n\n");
-
-                    writer.write(s.toString());
                 }
+
+                StringBuilder s = new StringBuilder();
+                if(showIds)
+                {
+                    s.append("ID: ").append(q.quoteId).append("\n");
+                }
+                s.append(nick);
+                s.append(" ( ").append(q.timestamp.toString()).append(" )\n");
+                s.append(q.content).append("\n\n");
+
+                writer.write(s.toString());
             }
             writer.close();
         }
@@ -202,59 +178,37 @@ public class Quote extends Cog
         }
 
         File f = new File(filename);
-        event.createFollowupMessageBuilder().addAttachment(f).send().join();
-        f.delete();
-    }
-
-    public void editQuote(SlashCommandInteraction event)
-    {
-        long quoteId = event.getOptionLongValueByIndex(0).orElse(-1L);
-        if(quoteId <= 0)
+        hook.sendFiles(FileUpload.fromData(f)).queue(message ->
         {
-            Bot.sendError(event, "Invalid Quote ID");
-        }
-
-        sendQuoteEditModal((Interaction) event, quoteId);
+            f.delete();
+        });
     }
 
-    private void sendQuoteEditModal(Interaction event, long quoteId)
-    {
-        event.respondWithModal(Bot.makeId(QUOTE_MODAL, quoteId), "Edit Quote",
-                ActionRow.of(TextInput.create(TextInputStyle.SHORT, "newQuote", "New Quote")), ActionRow.of(TextInput
-                        .create(TextInputStyle.SHORT, "time", "New Timestamp: " + STR_DATE_FMT + " (24 hour clock)")));
-
-    }
-
-    private void rmQuote(SlashCommandInteraction event)
-    {
-        long quoteId = event.getOptionLongValueByIndex(0).orElse(-1L);
-        if(quoteId <= 0)
-        {
-            Bot.sendError(event, "Invalid Quote ID");
-        }
-
-        event.respondLater();
-
-        CafeDB.rmQuote(quoteId);
-        // TODO message
-        event.createFollowupMessageBuilder().addEmbed(new EmbedBuilder().addField("Quote", "Deleted")).send();
-    }
-
-    private void editBtn(ButtonInteraction event, String data)
+    private void editBtn(ButtonInteractionEvent event, String data)
     {
         Long quoteId = Long.parseLong(data);
-        sendQuoteEditModal((Interaction) event, quoteId);
+
+        TextInput newQuote = TextInput.create("newQuote", "New Quote", TextInputStyle.SHORT).build();
+
+        TextInput newTs = TextInput
+                .create("time", "New Timestamp: " + STR_DATE_FMT + " (24 hour clock)", TextInputStyle.SHORT).build();
+
+        Modal modal = Modal.create(Bot.makeId(QUOTE_MODAL, quoteId), "Edit Quote")
+                .addActionRows(ActionRow.of(newQuote), ActionRow.of(newTs)).build();
+
+        event.replyModal(modal).queue();
     }
 
-    private void editModal(ModalInteraction event, String data)
+    private void editModal(ModalInteractionEvent event, String data)
     {
         // Parse quote ID
         Long quoteId = Long.parseLong(data);
 
-        String newQuote = event.getTextInputValueByCustomId("newQuote").orElse("");
-        String newTsString = event.getTextInputValueByCustomId("time").orElse("");
+        String newQuote = event.getValue("newQuote").getAsString();
+        String newTsString = event.getValue("time").getAsString();
 
-        event.respondLater();
+        event.deferReply();
+        InteractionHook hook = event.getHook();
 
         Timestamp newTs = null;
         if(!newTsString.isEmpty())
@@ -266,14 +220,14 @@ public class Quote extends Cog
             }
             catch(ParseException e)
             {
-                Bot.sendFollowError((Interaction) event, "Cannot parse new timestamp");
+                sendFollowError(hook, "Cannot parse new timestamp");
             }
         }
 
         if(newTs == null && newQuote.isEmpty())
         {
-            event.createFollowupMessageBuilder().addEmbed(new EmbedBuilder().addField("Quote Edit", "Unchanged"))
-                    .send();
+            hook.sendMessageEmbeds(new EmbedBuilder().setTitle("Quote Edit").setDescription("Unchanged").build())
+                    .queue();
             return;
         }
 
@@ -284,9 +238,9 @@ public class Quote extends Cog
 
         try
         {
-            User u = Bot.inst.getApi().getUserById(oldQuote.userId).get();
-            Server serv = event.getServer().orElse(null);
-            out.append(Bot.getNickname(u, serv)).append(" said:\n");
+            Guild serv = event.getGuild();
+            Member m = serv.getMemberById(oldQuote.userId);
+            out.append(m.getEffectiveName()).append(" said:\n");
         }
         catch(Exception e)
         {
@@ -308,38 +262,26 @@ public class Quote extends Cog
         }
         out.append(newQuote);
 
-        event.createFollowupMessageBuilder().addEmbed(new EmbedBuilder().addField("Quote Updated", out.toString()))
-                .addComponents(getQuoteBtns(quoteId)).send();
+        hook.sendMessageEmbeds(new EmbedBuilder().setTitle("Quote Updated").setDescription(out.toString()).build())
+                .addActionRow(getEditBtn(quoteId)).queue();
 
     }
 
     @Override
-    public List<SlashCommandBuilder> buildCommands()
+    public List<CommandData> buildCommands()
     {
-        LinkedList<SlashCommandBuilder> out = new LinkedList<>();
+        LinkedList<CommandData> out = new LinkedList<>();
 
-        out.add(SlashCommand.with("quote", "Save a quote for a user")
-                .addOption(SlashCommandOption.create(SlashCommandOptionType.USER, "user", "The user", true))
-                .addOption(SlashCommandOption.create(SlashCommandOptionType.STRING, "quote", "The quote", true)));
+        out.add(Commands.slash("quote", "Save a quote for a user").addOption(OptionType.USER, "user", "The user", true)
+                .addOption(OptionType.STRING, "quote", "The quote", true));
 
         registerCmdFunc(this::addQuote, "quote");
 
-        out.add(SlashCommand.with("get-quotes", "Get a list of quotes for the server/user")
-                .addOption(SlashCommandOption.create(SlashCommandOptionType.USER, "user", "The user to lookup"))
-                .addOption(SlashCommandOption.create(SlashCommandOptionType.BOOLEAN, "show-ids",
-                        "Show quote ids so you can edit a specific quote")));
+        out.add(Commands.slash("get-quotes", "Get a list of quotes for the server/user")
+                .addOption(OptionType.USER, "user", "The user to lookup")
+                .addOption(OptionType.BOOLEAN, "show-ids", "Show quote ids so you can edit a specific quote"));
 
         registerCmdFunc(this::getQuotes, "get-quotes");
-
-        out.add(SlashCommand.with("edit-quote", "Edit a quote").addOption(
-                SlashCommandOption.create(SlashCommandOptionType.LONG, "quote-id", "The ID of the quote", true)));
-
-        registerCmdFunc(this::editQuote, "edit-quote");
-
-        out.add(SlashCommand.with("rem-quote", "Remove a quote")
-                .addOption(SlashCommandOption.create(SlashCommandOptionType.LONG, "quote-id", "The quote ID", true)));
-
-        registerCmdFunc(this::rmQuote, "rem-quote");
 
         registerBtnFunc(this::editBtn, EDIT_BTN);
 

@@ -12,9 +12,11 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import org.bdd.cafeyike.commander.exceptions.CmdError;
-import org.javacord.api.entity.user.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.User;
 
 public class CafeDB
 {
@@ -294,7 +296,7 @@ public class CafeDB
         }
     }
 
-    public static List<QuoteEntry> getQuotes(Collection<User> users)
+    public static List<QuoteEntry> getQuotes(Collection<Member> users)
     {
         List<QuoteEntry> out = new LinkedList<>();
 
@@ -302,7 +304,7 @@ public class CafeDB
         {
             StringBuilder idStringB = new StringBuilder();
 
-            Iterator<User> iter = users.iterator();
+            Iterator<Member> iter = users.iterator();
             while(iter.hasNext())
             {
                 idStringB.append(iter.next().getId());

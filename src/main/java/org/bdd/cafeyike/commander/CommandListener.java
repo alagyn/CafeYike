@@ -4,23 +4,19 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import org.bdd.cafeyike.commander.exceptions.CmdError;
 import org.bdd.cafeyike.commander.exceptions.UsageError;
-import org.javacord.api.DiscordApi;
-import org.javacord.api.entity.message.MessageFlag;
-import org.javacord.api.entity.message.embed.EmbedBuilder;
-import org.javacord.api.event.interaction.InteractionCreateEvent;
-import org.javacord.api.interaction.AutocompleteInteraction;
-import org.javacord.api.interaction.ButtonInteraction;
-import org.javacord.api.interaction.Interaction;
-import org.javacord.api.interaction.InteractionType;
-import org.javacord.api.interaction.MessageComponentInteraction;
-import org.javacord.api.interaction.ModalInteraction;
-import org.javacord.api.interaction.SlashCommandBuilder;
-import org.javacord.api.interaction.SlashCommandInteraction;
-import org.javacord.api.listener.interaction.InteractionCreateListener;
+
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CommandListener implements InteractionCreateListener
+public class CommandListener extends ListenerAdapter
 {
     private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -39,48 +35,24 @@ public class CommandListener implements InteractionCreateListener
     }
 
     @Override
-    public void onInteractionCreate(InteractionCreateEvent event)
+    public void onSlashCommandInteraction(SlashCommandInteractionEvent event)
     {
-        Interaction i = event.getInteraction();
-
-        InteractionType type = i.getType();
-
-        switch(type)
-        {
-        case APPLICATION_COMMAND:
-            runCommand(i.asSlashCommandInteraction().get());
-            break;
-        case APPLICATION_COMMAND_AUTOCOMPLETE:
-            runCommandAutocomplete(i.asAutocompleteInteraction().get());
-            break;
-        case MESSAGE_COMPONENT:
-            runComponent(i.asMessageComponentInteraction().get());
-            break;
-        case MODAL_SUBMIT:
-            runModal(i.asModalInteraction().get());
-            break;
-        default:
-            break;
-        }
-    }
-
-    private void runCommand(SlashCommandInteraction interaction)
-    {
-        String commandName = interaction.getCommandName();
+        String commandName = event.getCommandPath();
         log.debug("runCommand() Got cmd: {}", commandName);
         Cmd c = commands.get(commandName);
 
         if(c == null)
         {
-            interaction.createImmediateResponder()
-                    .addEmbed(new EmbedBuilder().addField("Error", "Command \"" + commandName + "\" not found"))
-                    .setFlags(MessageFlag.EPHEMERAL).respond();
+            event.replyEmbeds(
+                    new EmbedBuilder().addField("Error", "Command \"" + commandName + "\" not found", false).build())
+                    .setEphemeral(true).queue();
+
             return;
         }
 
         try
         {
-            c.func.accept(interaction);
+            c.func.accept(event);
         }
         catch(UsageError e)
         {
@@ -92,19 +64,20 @@ public class CommandListener implements InteractionCreateListener
         }
     }
 
-    private void runModal(ModalInteraction event)
+    @Override
+    public void onModalInteraction(ModalInteractionEvent event)
     {
         // Limit to one split, i.e. 2 sections
-        String[] data = event.getCustomId().split(":", 2);
+        String[] data = event.getId().split(":", 2);
         log.debug("Got modal: {}", data[0]);
 
         Mdl m = modals.get(data[0]);
 
         if(m == null)
         {
-            event.createImmediateResponder()
-                    .addEmbed(new EmbedBuilder().addField("Error", "Modal \"" + data[0] + "\" not found"))
-                    .setFlags(MessageFlag.EPHEMERAL).respond();
+            event.replyEmbeds(
+                    new EmbedBuilder().addField("Error", "Modal \"" + data[0] + "\" not found", false).build())
+                    .setEphemeral(true).queue();
             return;
         }
 
@@ -122,31 +95,21 @@ public class CommandListener implements InteractionCreateListener
         }
     }
 
-    private void runComponent(MessageComponentInteraction event)
-    {
-        switch(event.getComponentType())
-        {
-        case BUTTON:
-            runButton(event.asButtonInteraction().get());
-            break;
-        default:
-            break;
-        }
-    }
-
-    private void runButton(ButtonInteraction event)
+    @Override
+    public void onButtonInteraction(ButtonInteractionEvent event)
     {
         // Limit to one split, i.e. 2 sections
-        String[] data = event.getCustomId().split(":", 2);
+        String[] data = event.getId().split(":", 2);
         log.debug("runButton() Got btn: {}", data[0]);
 
         Btn b = buttons.get(data[0]);
 
         if(b == null)
         {
-            event.createImmediateResponder()
-                    .addEmbed(new EmbedBuilder().addField("Error", "Button \"" + data[0] + "\" not found"))
-                    .setFlags(MessageFlag.EPHEMERAL).respond();
+            event.replyEmbeds(
+                    new EmbedBuilder().addField("Error", "Button \"" + data[0] + "\" not found", false).build())
+                    .setEphemeral(true).queue();
+
             return;
         }
 
@@ -164,14 +127,6 @@ public class CommandListener implements InteractionCreateListener
         }
     }
 
-    private void runCommandAutocomplete(AutocompleteInteraction interaction)
-    {
-        if(interaction == null)
-        {
-            return;
-        }
-    }
-
     public void shutdown()
     {
         for(Cog c : cogs)
@@ -180,9 +135,9 @@ public class CommandListener implements InteractionCreateListener
         }
     }
 
-    public void registerCommands(DiscordApi api)
+    public void registerCommands(JDA api)
     {
-        LinkedList<SlashCommandBuilder> toRegister = new LinkedList<>();
+        LinkedList<CommandData> toRegister = new LinkedList<>();
 
         for(Cog cog : cogs)
         {
@@ -219,7 +174,6 @@ public class CommandListener implements InteractionCreateListener
 
             cog.registerListeners(api);
         }
-
-        api.bulkOverwriteGlobalApplicationCommands(toRegister).join();
+        api.updateCommands().addCommands(toRegister);
     }
 }
