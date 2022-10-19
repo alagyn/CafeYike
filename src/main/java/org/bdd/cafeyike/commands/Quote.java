@@ -29,6 +29,7 @@ import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
@@ -49,30 +50,33 @@ public class Quote extends Cog
     private static final String STR_DATE_FMT = "MM/DD/YY HH:MM";
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("MM/dd/yy HH:mm");
 
+    private static final String USER_OP = "user", QUOTE_OP = "quote";
+
     private final int quoteEditTimeSec;
 
-    public Quote()
+    public Quote(Bot bot)
     {
-        quoteEditTimeSec = Bot.getIntConfig("quoteEditTimeSec");
+        super(bot);
+        quoteEditTimeSec = bot.getIntConfig("quoteEditTimeSec");
     }
 
     public void addQuote(SlashCommandInteractionEvent event)
     {
-        Member user = event.getOption("user").getAsMember();
+        Member user = event.getOption(USER_OP).getAsMember();
 
         if(user == null)
         {
             sendError(event, "Cannot quote user");
         }
 
-        String content = event.getOption("content").getAsString();
+        String content = event.getOption(QUOTE_OP).getAsString();
 
         if(content == null || content.isEmpty())
         {
             sendError(event, "Quote cannot be empty");
         }
 
-        event.deferReply();
+        event.deferReply().queue();
         InteractionHook hook = event.getHook();
 
         long quoteId = CafeDB.addQuote(user.getIdLong(), content);
@@ -92,16 +96,16 @@ public class Quote extends Cog
 
     public void getQuotes(SlashCommandInteractionEvent event)
     {
-        Member singleUser = event.getOption("user").getAsMember();
+        Member singleUser = event.getOption(USER_OP, OptionMapping::getAsMember);
 
         List<QuoteEntry> quotes = null;
         String filename = "";
 
         Guild serv = event.getGuild();
 
-        boolean showIds = event.getOption("show-ids").getAsBoolean();
+        boolean showIds = event.getOption("show-ids", false, OptionMapping::getAsBoolean);
 
-        event.deferReply();
+        event.deferReply().queue();
         InteractionHook hook = event.getHook();
 
         if(singleUser != null)
@@ -207,7 +211,7 @@ public class Quote extends Cog
         String newQuote = event.getValue("newQuote").getAsString();
         String newTsString = event.getValue("time").getAsString();
 
-        event.deferReply();
+        event.deferReply().queue();
         InteractionHook hook = event.getHook();
 
         Timestamp newTs = null;
@@ -272,13 +276,13 @@ public class Quote extends Cog
     {
         LinkedList<CommandData> out = new LinkedList<>();
 
-        out.add(Commands.slash("quote", "Save a quote for a user").addOption(OptionType.USER, "user", "The user", true)
-                .addOption(OptionType.STRING, "quote", "The quote", true));
+        out.add(Commands.slash("quote", "Save a quote for a user").addOption(OptionType.USER, USER_OP, "The user", true)
+                .addOption(OptionType.STRING, QUOTE_OP, "The quote", true));
 
         registerCmdFunc(this::addQuote, "quote");
 
         out.add(Commands.slash("get-quotes", "Get a list of quotes for the server/user")
-                .addOption(OptionType.USER, "user", "The user to lookup")
+                .addOption(OptionType.USER, USER_OP, "The user to lookup")
                 .addOption(OptionType.BOOLEAN, "show-ids", "Show quote ids so you can edit a specific quote"));
 
         registerCmdFunc(this::getQuotes, "get-quotes");

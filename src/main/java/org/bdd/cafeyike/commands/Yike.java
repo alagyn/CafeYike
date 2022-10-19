@@ -6,6 +6,8 @@ import org.bdd.cafeyike.CafeDB.YikeEntry;
 import org.bdd.cafeyike.commander.Bot;
 import org.bdd.cafeyike.commander.Cog;
 import org.bdd.cafeyike.commander.utils.DoAfter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
@@ -14,6 +16,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
@@ -21,6 +24,8 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 
 public class Yike extends Cog
 {
+    private static Logger log = LoggerFactory.getLogger(Yike.class.getName());
+
     private final int voteTimeSec;
 
     private final String yikeBtn = "yike";
@@ -66,9 +71,10 @@ public class Yike extends Cog
 
     private HashMap<Long, UnyikeVoter> voters = new HashMap<>();
 
-    public Yike()
+    public Yike(Bot bot)
     {
-        voteTimeSec = Bot.getIntConfig("voteTimeSec");
+        super(bot);
+        voteTimeSec = bot.getIntConfig("voteTimeSec");
     }
 
     public void yike(SlashCommandInteractionEvent event)
@@ -135,7 +141,7 @@ public class Yike extends Cog
             sendError(event, "No negative yikes allowed");
         }
 
-        Boolean requestAdmin = event.getOption("admin").getAsBoolean();
+        Boolean requestAdmin = event.getOption("admin", false, OptionMapping::getAsBoolean);
 
         if(requestAdmin)
         {
@@ -262,7 +268,7 @@ public class Yike extends Cog
 
     public void list(SlashCommandInteractionEvent event)
     {
-        Member user = event.getOption("user").getAsMember();
+        Member user = event.getOption("user", OptionMapping::getAsMember);
 
         Guild serv = event.getGuild();
 
@@ -271,7 +277,7 @@ public class Yike extends Cog
             sendError(event, "Cannot get yikes outside a server");
         }
 
-        event.deferReply();
+        event.deferReply().queue();
         InteractionHook hook = event.getHook();
 
         if(user != null)
@@ -310,6 +316,7 @@ public class Yike extends Cog
             out.append(u.getEffectiveName()).append(": ").append(e.count).append("\n");
         }
 
+        log.debug("Sending Yike Log");
         hook.sendMessageEmbeds(
                 new EmbedBuilder().setTitle("Chronicle of Yikes:").setDescription(out.toString()).build()).queue();
     }

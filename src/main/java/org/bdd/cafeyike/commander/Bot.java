@@ -7,14 +7,10 @@ import java.util.Properties;
 
 import org.bdd.cafeyike.commander.exceptions.BotError;
 import org.bdd.cafeyike.commander.exceptions.CmdError;
-import org.bdd.cafeyike.commander.exceptions.UsageError;
+
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.OnlineStatus;
-import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.SelfUser;
-import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.events.interaction.GenericInteractionCreateEvent;
-import net.dv8tion.jda.api.interactions.Interaction;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import org.slf4j.Logger;
@@ -23,7 +19,6 @@ import org.slf4j.LoggerFactory;
 public class Bot
 {
     private final Logger log = LoggerFactory.getLogger(getClass());
-    public static final Bot inst = new Bot();
 
     private final Properties config;
 
@@ -32,9 +27,8 @@ public class Bot
     private final String token;
 
     private CommandListener cl = null;
-    //ListenerManager<InteractionCreateListener> listenManager;
 
-    private Bot()
+    public Bot()
     {
         config = new Properties();
 
@@ -56,14 +50,14 @@ public class Bot
         cl = new CommandListener();
     }
 
-    public static String getConfig(String key)
+    public String getConfig(String key)
     {
-        return inst.config.getProperty(key);
+        return config.getProperty(key);
     }
 
-    public static int getIntConfig(String key)
+    public int getIntConfig(String key)
     {
-        return Integer.parseInt(inst.config.getProperty(key));
+        return Integer.parseInt(config.getProperty(key));
     }
 
     public void addCog(Cog cog)
@@ -90,7 +84,7 @@ public class Bot
         {
             public void run()
             {
-                Bot.inst.intShutdown();
+                intShutdown();
             }
         });
 
@@ -117,5 +111,4 @@ public class Bot
         out.append(prefix).append(":").append(data.toString());
         return out.toString();
     }
-
 }

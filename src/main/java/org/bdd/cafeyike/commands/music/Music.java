@@ -3,6 +3,7 @@ package org.bdd.cafeyike.commands.music;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.bdd.cafeyike.commander.Bot;
 import org.bdd.cafeyike.commander.Cog;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
@@ -43,8 +44,9 @@ public class Music extends Cog
     public static final String SHUF_BTN = "shuf";
     public static final String LOOP_BTN = "loop";
 
-    public Music()
+    public Music(Bot bot)
     {
+        super(bot);
         playerManager = new DefaultAudioPlayerManager();
         AudioSourceManagers.registerRemoteSources(playerManager);
     }
@@ -128,7 +130,7 @@ public class Music extends Cog
             sendError(event, "Empty query");
         }
 
-        event.deferReply();
+        event.deferReply().queue();
         InteractionHook hook = event.getHook();
 
         AudioManager am = serv.getAudioManager();

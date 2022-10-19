@@ -7,7 +7,6 @@ import org.bdd.cafeyike.commander.exceptions.UsageError;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
@@ -24,6 +23,13 @@ public abstract class Cog
     private LinkedList<Mdl> modals = new LinkedList<>();
 
     public abstract List<CommandData> buildCommands();
+
+    protected Bot bot;
+
+    public Cog(Bot bot)
+    {
+        this.bot = bot;
+    }
 
     public void registerCmdFunc(Cmd.Func func, String name)
     {

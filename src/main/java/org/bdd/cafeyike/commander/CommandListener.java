@@ -38,7 +38,7 @@ public class CommandListener extends ListenerAdapter
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event)
     {
         String commandName = event.getCommandPath();
-        log.debug("runCommand() Got cmd: {}", commandName);
+        log.debug("onSlashCommandInteraction() Got cmd: {}", commandName);
         Cmd c = commands.get(commandName);
 
         if(c == null)

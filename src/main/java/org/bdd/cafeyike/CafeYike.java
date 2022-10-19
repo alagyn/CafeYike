@@ -7,6 +7,11 @@ import org.bdd.cafeyike.commands.Quote;
 import org.bdd.cafeyike.commands.Yike;
 import org.bdd.cafeyike.commands.music.Music;
 
+import org.bdd.twig.Twig;
+import org.bdd.twig.Twig.Level;
+import org.bdd.twig.branch.Branch;
+import org.bdd.twig.branch.StreamBranch;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +30,12 @@ public class CafeYike
 
     public static void main(String[] args)
     {
-        Bot bot = Bot.inst;
+        Branch b = new StreamBranch(System.out, "[{color.level}{event.level}{color.end}] {event.message}\n");
+        Twig.addBranch(b);
+        Twig.setLevel(Level.Debug);
+        log.info("Logging Setup");
+
+        Bot bot = new Bot();
 
         log.info("Initializing Database");
 
@@ -46,9 +56,9 @@ public class CafeYike
         }
 
         log.info("Loading Commands");
-        bot.addCog(new Yike());
-        bot.addCog(new Quote());
-        bot.addCog(new Music());
+        bot.addCog(new Yike(bot));
+        bot.addCog(new Quote(bot));
+        bot.addCog(new Music(bot));
 
         log.info("Initializing Bot");
         try
