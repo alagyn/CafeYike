@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.bdd.cafeyike.commander.Bot;
 import org.bdd.cafeyike.commander.Cog;
+import org.bdd.cafeyike.commander.utils.DoAfter;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
@@ -89,7 +90,13 @@ public class Music extends Cog
             MusicPlayer mp = (MusicPlayer) am.getSendingHandler();
             mp.nowPlayingMsg.delete();
             mp.stop();
-            event.replyEmbeds(new EmbedBuilder().setTitle("Music").setDescription("Goodbye").build()).queue();
+            am.closeAudioConnection();
+            InteractionHook hook = event
+                    .replyEmbeds(new EmbedBuilder().setTitle("Music").setDescription("Goodbye").build()).complete();
+            new DoAfter(60, x ->
+            {
+                hook.deleteOriginal();
+            });
         }
         else
         {
@@ -182,8 +189,6 @@ public class Music extends Cog
                 text.append("Playlist: ").append(playlist.getName()).append("\n");
 
                 text.append(len).append(" ").append(len == 1 ? "item." : "items.");
-                hook.sendMessageEmbeds(
-                        new EmbedBuilder().setTitle("Added to Queue").setDescription(text.toString()).build()).queue();
 
                 if(len <= 0)
                 {
@@ -202,6 +207,9 @@ public class Music extends Cog
                     musicPlayer.playIdx(nextIdx);
                 }
 
+                hook.sendMessageEmbeds(
+                        new EmbedBuilder().setTitle("Added to Queue").setDescription(text.toString()).build())
+                        .complete();
                 musicPlayer.makeNewNowPlaying();
             }
 
@@ -246,6 +254,7 @@ public class Music extends Cog
 
     private void nextBtn(ButtonInteractionEvent event, String data)
     {
+        event.deferEdit().queue();
         MusicPlayer mp = getPlayer(event);
         if(mp != null)
         {
@@ -255,6 +264,7 @@ public class Music extends Cog
 
     private void prevBtn(ButtonInteractionEvent event, String data)
     {
+        event.deferEdit().queue();
         MusicPlayer mp = getPlayer(event);
         if(mp != null)
         {
@@ -264,6 +274,7 @@ public class Music extends Cog
 
     private void playBtn(ButtonInteractionEvent event, String data)
     {
+        event.deferEdit().queue();
         MusicPlayer mp = getPlayer(event);
         if(mp != null)
         {
@@ -273,6 +284,7 @@ public class Music extends Cog
 
     private void loopBtn(ButtonInteractionEvent event, String data)
     {
+        event.deferEdit().queue();
         MusicPlayer mp = getPlayer(event);
         if(mp != null)
         {
@@ -282,6 +294,7 @@ public class Music extends Cog
 
     private void shuffleBtn(ButtonInteractionEvent event, String data)
     {
+        event.deferEdit().queue();
         MusicPlayer mp = getPlayer(event);
         if(mp != null)
         {

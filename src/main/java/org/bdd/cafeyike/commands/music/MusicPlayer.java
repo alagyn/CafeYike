@@ -236,7 +236,11 @@ public class MusicPlayer implements AudioEventListener, AudioSendHandler
     public void onTrackStart(AudioPlayer player, AudioTrack track)
     {
         log.trace("onTrackStart()");
-        // noop?
+        if(player.isPaused())
+        {
+            player.setPaused(false);
+        }
+
     }
 
     /**
@@ -256,6 +260,10 @@ public class MusicPlayer implements AudioEventListener, AudioSendHandler
         {
             startNext();
         }
+        else
+        {
+            setEndOfQueue();
+        }
     }
 
     /**
@@ -267,7 +275,7 @@ public class MusicPlayer implements AudioEventListener, AudioSendHandler
     {
         // Pause and wait for a continue button?
         log.error("MusicPlayer::onTrackException(): {} : {} ", track.getIdentifier(), exception.getMessage());
-        player.playTrack(track);
+        player.playTrack(track.makeClone());
     }
 
     /**
