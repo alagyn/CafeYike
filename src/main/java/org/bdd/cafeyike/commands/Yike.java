@@ -1,6 +1,8 @@
 package org.bdd.cafeyike.commands;
 
 import java.util.*;
+
+import org.bdd.cafeyike.CafeConfig;
 import org.bdd.cafeyike.CafeDB;
 import org.bdd.cafeyike.CafeDB.YikeEntry;
 import org.bdd.cafeyike.commander.Bot;
@@ -74,7 +76,7 @@ public class Yike extends Cog
     public Yike(Bot bot)
     {
         super(bot);
-        voteTimeSec = bot.getIntConfig("voteTimeSec");
+        voteTimeSec = CafeConfig.getIntConfig("voteTimeSec");
     }
 
     public void yike(SlashCommandInteractionEvent event)

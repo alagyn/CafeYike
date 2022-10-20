@@ -12,6 +12,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+
+import org.bdd.cafeyike.CafeConfig;
 import org.bdd.cafeyike.CafeDB;
 import org.bdd.cafeyike.CafeDB.QuoteEntry;
 import org.bdd.cafeyike.commander.Bot;
@@ -57,7 +59,7 @@ public class Quote extends Cog
     public Quote(Bot bot)
     {
         super(bot);
-        quoteEditTimeSec = bot.getIntConfig("quoteEditTimeSec");
+        quoteEditTimeSec = CafeConfig.getIntConfig("quoteEditTimeSec");
     }
 
     public void addQuote(SlashCommandInteractionEvent event)
@@ -81,11 +83,13 @@ public class Quote extends Cog
 
         long quoteId = CafeDB.addQuote(user.getIdLong(), content);
 
-        EmbedBuilder b = new EmbedBuilder().addField("Quote: " + user.getEffectiveName(), content, false);
+        EmbedBuilder b = new EmbedBuilder().addField("Quote: " + user.getEffectiveName(), content, false)
+                .setFooter("10min to edit");
         Message m = hook.sendMessageEmbeds(b.build()).addActionRow(getEditBtn(quoteId)).complete();
         new DoAfter(quoteEditTimeSec, x ->
         {
-            m.editMessageComponents(new ArrayList<>()).queue();
+            b.setFooter("Quote Locked");
+            m.editMessageComponents(new ArrayList<>()).setEmbeds(b.build()).queue();
         });
     }
 
@@ -267,8 +271,7 @@ public class Quote extends Cog
         out.append(newQuote);
 
         hook.sendMessageEmbeds(new EmbedBuilder().setTitle("Quote Updated").setDescription(out.toString()).build())
-                .addActionRow(getEditBtn(quoteId)).queue();
-
+                .queue();
     }
 
     @Override

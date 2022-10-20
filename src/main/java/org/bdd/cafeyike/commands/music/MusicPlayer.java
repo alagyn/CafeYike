@@ -330,4 +330,10 @@ public class MusicPlayer implements AudioEventListener, AudioSendHandler
     {
         return ByteBuffer.wrap(lastFrame.getData());
     }
+
+    @Override
+    public boolean isOpus()
+    {
+        return true;
+    }
 }

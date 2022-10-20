@@ -7,11 +7,6 @@ import org.bdd.cafeyike.commands.Quote;
 import org.bdd.cafeyike.commands.Yike;
 import org.bdd.cafeyike.commands.music.Music;
 
-import org.bdd.twig.Twig;
-import org.bdd.twig.Twig.Level;
-import org.bdd.twig.branch.Branch;
-import org.bdd.twig.branch.StreamBranch;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +14,6 @@ import net.dv8tion.jda.api.requests.GatewayIntent;
 
 public class CafeYike
 {
-    private static final Logger log = LoggerFactory.getLogger(CafeYike.class);
 
     private static final GatewayIntent[] intents = { GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGES,
             GatewayIntent.GUILD_EMOJIS_AND_STICKERS, GatewayIntent.GUILD_BANS, GatewayIntent.GUILD_MESSAGE_REACTIONS,
@@ -30,10 +24,8 @@ public class CafeYike
 
     public static void main(String[] args)
     {
-        Branch b = new StreamBranch(System.out, "[{color.level}{event.level}{color.end}] {event.message}\n");
-        Twig.addBranch(b);
-        Twig.setLevel(Level.Debug);
-        log.info("Logging Setup");
+        // Main logger, also forces the config file to be loaded
+        Logger log = LoggerFactory.getLogger(CafeYike.class);
 
         Bot bot = new Bot();
 

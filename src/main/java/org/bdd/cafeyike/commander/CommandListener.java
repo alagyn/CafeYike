@@ -68,7 +68,7 @@ public class CommandListener extends ListenerAdapter
     public void onModalInteraction(ModalInteractionEvent event)
     {
         // Limit to one split, i.e. 2 sections
-        String[] data = event.getId().split(":", 2);
+        String[] data = event.getModalId().split(":", 2);
         log.debug("Got modal: {}", data[0]);
 
         Mdl m = modals.get(data[0]);
@@ -99,7 +99,7 @@ public class CommandListener extends ListenerAdapter
     public void onButtonInteraction(ButtonInteractionEvent event)
     {
         // Limit to one split, i.e. 2 sections
-        String[] data = event.getId().split(":", 2);
+        String[] data = event.getButton().getId().split(":", 2);
         log.debug("runButton() Got btn: {}", data[0]);
 
         Btn b = buttons.get(data[0]);

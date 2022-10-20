@@ -1,10 +1,8 @@
 package org.bdd.cafeyike.commander;
 
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.Arrays;
-import java.util.Properties;
 
+import org.bdd.cafeyike.CafeConfig;
 import org.bdd.cafeyike.commander.exceptions.BotError;
 import org.bdd.cafeyike.commander.exceptions.CmdError;
 
@@ -20,8 +18,6 @@ public class Bot
 {
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    private final Properties config;
-
     private boolean initted = false;
     private JDA api;
     private final String token;
@@ -30,34 +26,13 @@ public class Bot
 
     public Bot()
     {
-        config = new Properties();
-
-        try(FileInputStream is = new FileInputStream("system.config"))
-        {
-            config.load(is);
-        }
-        catch(IOException ex)
-        {
-            System.out.println("Cannot load config file");
-            System.exit(0);
-        }
-        token = config.getProperty("DISCORD_TOKEN");
+        token = CafeConfig.getConfig("DISCORD_TOKEN");
         if(token == null || token.isEmpty())
         {
             throw new CmdError("Bot() login token not defined, system.config: DISCORD_TOKEN = [token]");
         }
 
         cl = new CommandListener();
-    }
-
-    public String getConfig(String key)
-    {
-        return config.getProperty(key);
-    }
-
-    public int getIntConfig(String key)
-    {
-        return Integer.parseInt(config.getProperty(key));
     }
 
     public void addCog(Cog cog)
