@@ -7,7 +7,6 @@ import java.util.Properties;
 
 import org.bdd.twig.Twig;
 import org.bdd.twig.TwigConfig;
-import org.bdd.twig.Twig.Level;
 import org.bdd.twig.branch.FileBranch;
 import org.bdd.twig.branch.StreamBranch;
 
@@ -49,7 +48,10 @@ public class CafeConfig implements TwigConfig
             break;
         }
 
-        Twig.setLevel(Level.Debug);
+        String loglevel = configs.getProperty("LOG_LVL");
+        Twig.setLevel(loglevel);
+        Twig.addBlock("com.sedmelluq");
+        Twig.addBlock("net.dv8");
 
     }
 

@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.bdd.cafeyike.CafeConfig;
 import org.bdd.cafeyike.CafeDB;
@@ -54,12 +55,23 @@ public class Quote extends Cog
 
     private static final String USER_OP = "user", QUOTE_OP = "quote";
 
+    private ConcurrentHashMap<Long, Message> editMessages = new ConcurrentHashMap<>();
+
     private final int quoteEditTimeSec;
 
     public Quote(Bot bot)
     {
         super(bot);
         quoteEditTimeSec = CafeConfig.getIntConfig("quoteEditTimeSec");
+    }
+
+    @Override
+    public void shutdown()
+    {
+        for(Message m : editMessages.values())
+        {
+            m.editMessageComponents(new ArrayList<>()).complete();
+        }
     }
 
     public void addQuote(SlashCommandInteractionEvent event)
@@ -86,10 +98,12 @@ public class Quote extends Cog
         EmbedBuilder b = new EmbedBuilder().addField("Quote: " + user.getEffectiveName(), content, false)
                 .setFooter("10min to edit");
         Message m = hook.sendMessageEmbeds(b.build()).addActionRow(getEditBtn(quoteId)).complete();
+        editMessages.put(quoteId, m);
         new DoAfter(quoteEditTimeSec, x ->
         {
             b.setFooter("Quote Locked");
             m.editMessageComponents(new ArrayList<>()).setEmbeds(b.build()).queue();
+            editMessages.remove(quoteId);
         });
     }
 

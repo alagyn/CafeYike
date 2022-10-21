@@ -12,7 +12,7 @@
                 "default": true
             }
         ],
-        "java.configuration.updateBuildConfiguration": "automatic",
+        "java.configuration.updateBuildConfiguration": "interactive",
         "java.format.settings.url": "BDD_Eclipse_Format.xml",
     }
 }

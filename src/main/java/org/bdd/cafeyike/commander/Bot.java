@@ -11,6 +11,9 @@ import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.SelfUser;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.requests.GatewayIntent;
+import net.dv8tion.jda.api.utils.ChunkingFilter;
+import net.dv8tion.jda.api.utils.MemberCachePolicy;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +54,8 @@ public class Bot
 
         JDABuilder temp_builder = JDABuilder.createDefault(token, Arrays.asList(intents));
         temp_builder.addEventListeners(cl);
+        temp_builder.setMemberCachePolicy(MemberCachePolicy.ALL);
+        temp_builder.setChunkingFilter(ChunkingFilter.ALL);
         api = temp_builder.build();
 
         cl.registerCommands(api);
