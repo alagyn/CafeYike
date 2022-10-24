@@ -1,5 +1,7 @@
 deprecated
 
+database_upgrades
+
 # Compiled class file
 *.class
 
