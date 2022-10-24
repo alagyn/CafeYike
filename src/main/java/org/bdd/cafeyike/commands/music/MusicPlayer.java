@@ -194,10 +194,10 @@ public class MusicPlayer implements AudioEventListener, AudioSendHandler
             player.playTrack(currentTrack.makeClone());
             makeNewNowPlaying();
         }
-        else
+        else if(!trackQueue.isEmpty())
         {
-            player.setPaused(true);
-            setEndOfQueue();
+            player.playTrack(trackQueue.get(0));
+            player.setPaused(false);
         }
     }
 

@@ -7,7 +7,6 @@ import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -77,10 +76,16 @@ public class Quote extends Cog
     public void addQuote(SlashCommandInteractionEvent event)
     {
         Member user = event.getOption(USER_OP).getAsMember();
+        Guild serv = event.getGuild();
 
         if(user == null)
         {
             sendError(event, "Cannot quote user");
+        }
+
+        if(serv == null)
+        {
+            sendError(event, "Cannot quote outside a server");
         }
 
         String content = event.getOption(QUOTE_OP).getAsString();
@@ -93,7 +98,7 @@ public class Quote extends Cog
         event.deferReply().queue();
         InteractionHook hook = event.getHook();
 
-        long quoteId = CafeDB.addQuote(user.getIdLong(), content);
+        long quoteId = CafeDB.addQuote(serv.getIdLong(), user.getIdLong(), content);
 
         EmbedBuilder b = new EmbedBuilder().addField("Quote: " + user.getEffectiveName(), content, false)
                 .setFooter("10min to edit");
@@ -131,7 +136,7 @@ public class Quote extends Cog
             ArrayList<Member> users = new ArrayList<>();
             users.add(singleUser);
             // Get for a single user
-            quotes = CafeDB.getQuotes(users);
+            quotes = CafeDB.getQuotesForUser(serv.getIdLong(), singleUser.getIdLong());
             filename = singleUser.getId() + "_quotes.txt";
         }
         else
@@ -142,9 +147,7 @@ public class Quote extends Cog
                 sendFollowError(hook, "Cannot get quotes, not in server and no user supplied");
             }
 
-            Collection<Member> users = serv.getMembers();
-
-            quotes = CafeDB.getQuotes(users);
+            quotes = CafeDB.getQuotesForServer(serv.getIdLong());
 
             filename = serv.getId() + "_quotes.txt";
         }
@@ -253,7 +256,7 @@ public class Quote extends Cog
             return;
         }
 
-        QuoteEntry oldQuote = CafeDB.getQuote(quoteId);
+        QuoteEntry oldQuote = CafeDB.getQuoteByID(quoteId);
         CafeDB.editQuote(quoteId, newQuote, newTs);
 
         StringBuilder out = new StringBuilder();
