@@ -239,7 +239,7 @@ public class MusicPlayer implements AudioEventListener, AudioSendHandler
     public synchronized void shuffle()
     {
         Random rand = new Random();
-        for(int i = curIdx + 1; i < queueLen(); ++i)
+        for(int i = curIdx + 1; i < queueLen() - 1; ++i)
         {
             int randIdx = rand.nextInt(queueLen() - i - 1) + i;
             Collections.swap(trackQueue, i, randIdx);
