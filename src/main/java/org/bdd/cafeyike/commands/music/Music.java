@@ -3,6 +3,7 @@ package org.bdd.cafeyike.commands.music;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.bdd.cafeyike.CafeConfig;
 import org.bdd.cafeyike.commander.Bot;
 import org.bdd.cafeyike.commander.Cog;
 import org.bdd.cafeyike.commander.utils.DoAfter;
@@ -38,6 +39,7 @@ public class Music extends Cog
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     private AudioPlayerManager playerManager;
+    public final int leaveTimeMillis;
 
     public static final String PREV_BTN = "prev";
     public static final String NEXT_BTN = "next";
@@ -48,6 +50,7 @@ public class Music extends Cog
     public Music(Bot bot)
     {
         super(bot);
+        leaveTimeMillis = CafeConfig.getIntConfig("musicLeaveTimeSec") * 1000;
         playerManager = new DefaultAudioPlayerManager();
         AudioSourceManagers.registerRemoteSources(playerManager);
     }
@@ -75,6 +78,14 @@ public class Music extends Cog
         return out;
     }
 
+    public static void leave(AudioManager am)
+    {
+        MusicPlayer mp = (MusicPlayer) am.getSendingHandler();
+        mp.nowPlayingMsg.delete();
+        mp.stop();
+        am.closeAudioConnection();
+    }
+
     private void leaveCmd(SlashCommandInteractionEvent event)
     {
         Guild serv = event.getGuild();
@@ -87,10 +98,7 @@ public class Music extends Cog
 
         if(am.isConnected())
         {
-            MusicPlayer mp = (MusicPlayer) am.getSendingHandler();
-            mp.nowPlayingMsg.delete();
-            mp.stop();
-            am.closeAudioConnection();
+            leave(am);
             InteractionHook hook = event
                     .replyEmbeds(new EmbedBuilder().setTitle("Music").setDescription("Goodbye").build()).complete();
             new DoAfter(60, x ->
@@ -149,7 +157,7 @@ public class Music extends Cog
                     .complete();
             AudioPlayer player = playerManager.createPlayer();
             // Create an audio source and add it to the audio connection's queue
-            MusicPlayer mp = new MusicPlayer(player, m, textChannel, serv.getIdLong());
+            MusicPlayer mp = new MusicPlayer(am, player, m, textChannel, serv.getIdLong(), leaveTimeMillis);
             am.setSendingHandler(mp);
             am.openAudioConnection(voiceChannel);
         }
@@ -289,6 +297,7 @@ public class Music extends Cog
         if(mp != null)
         {
             mp.setLooping(!mp.isLooping());
+            mp.makeNewNowPlaying();
         }
     }
 

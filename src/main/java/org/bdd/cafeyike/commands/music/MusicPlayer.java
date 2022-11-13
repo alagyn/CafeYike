@@ -29,6 +29,7 @@ import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.managers.AudioManager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,11 +38,40 @@ public class MusicPlayer implements AudioEventListener, AudioSendHandler
 {
     private final Logger log = LoggerFactory.getLogger(getClass());
 
+    private static class LeaveThread implements Runnable
+    {
+        public final int sleepTime;
+        public final AudioManager manager;
+
+        public LeaveThread(int sleepTimeMillis, AudioManager manager)
+        {
+            this.sleepTime = sleepTimeMillis;
+            this.manager = manager;
+        }
+
+        @Override
+        public void run()
+        {
+            try
+            {
+                Thread.sleep(sleepTime);
+                Music.leave(manager);
+            }
+            catch(InterruptedException err)
+            {
+                //pass
+            }
+        }
+
+    }
+
     public final AudioPlayer player;
     private AudioFrame lastFrame;
+    private AudioManager manager;
     public Message nowPlayingMsg;
     private final MessageChannel textChannel;
     private long serverId;
+    private Thread leaveThread;
 
     private boolean endOfQueue;
     private boolean looping;
@@ -50,12 +80,17 @@ public class MusicPlayer implements AudioEventListener, AudioSendHandler
     private int curIdx;
 
     private AudioTrack currentTrack;
+    private final int leaveTimeMillis;
 
-    public MusicPlayer(AudioPlayer audioPlayer, Message msg, MessageChannel textChannel, long serverId)
+    public MusicPlayer(AudioManager manager, AudioPlayer audioPlayer, Message msg, MessageChannel textChannel,
+            long serverId, int leaveTimeMillis)
     {
+        this.manager = manager;
         this.player = audioPlayer;
         this.nowPlayingMsg = msg;
         this.textChannel = textChannel;
+        this.leaveTimeMillis = leaveTimeMillis;
+        leaveThread = null;
         trackQueue = new ArrayList<>();
         curIdx = -1;
 
@@ -217,7 +252,8 @@ public class MusicPlayer implements AudioEventListener, AudioSendHandler
     public void onPlayerPause(AudioPlayer player)
     {
         log.trace("Player paused");
-        // change message from now playing to paused?
+        leaveThread = new Thread(new MusicPlayer.LeaveThread(leaveTimeMillis, manager));
+        leaveThread.start();
     }
 
     /**
@@ -240,7 +276,11 @@ public class MusicPlayer implements AudioEventListener, AudioSendHandler
         {
             player.setPaused(false);
         }
-
+        if(leaveThread != null)
+        {
+            leaveThread.interrupt();
+            leaveThread = null;
+        }
     }
 
     /**
@@ -256,13 +296,21 @@ public class MusicPlayer implements AudioEventListener, AudioSendHandler
             return;
         }
 
-        if(!looping && endReason.mayStartNext)
+        if(endReason.mayStartNext)
         {
-            startNext();
+            if(looping)
+            {
+                player.playTrack(track.makeClone());
+            }
+            else
+            {
+                startNext();
+            }
         }
         else
         {
             setEndOfQueue();
+            player.setPaused(true);
         }
     }
 
@@ -288,6 +336,7 @@ public class MusicPlayer implements AudioEventListener, AudioSendHandler
     {
         // ^^^^?
         log.error("MusicPlayer::onTrackStuck(): {} : stuck", track.getIdentifier());
+        player.playTrack(track.makeClone());
     }
 
     public void onTrackStuck(AudioPlayer player, AudioTrack track, long thresholdMs, StackTraceElement[] stackTrace)
