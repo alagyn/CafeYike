@@ -32,7 +32,7 @@ public class CafeConfig implements TwigConfig
         {
         case "console":
             Twig.addBranch(new StreamBranch(System.out,
-                    "[{color.level}{event.level}{color.end}] {event.name} {event.message}\n"));
+                    "{event.time} [{color.level}{event.level}{color.end}] {event.name} {event.message}\n"));
             break;
         case "file":
             try
