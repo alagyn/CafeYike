@@ -2,6 +2,10 @@ deprecated
 
 database_upgrades
 
+*.dat
+*.db
+*.json
+
 # Compiled class file
 *.class
 

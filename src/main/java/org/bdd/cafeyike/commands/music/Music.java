@@ -287,6 +287,7 @@ public class Music extends Cog
         if(mp != null)
         {
             mp.player.setPaused(!mp.player.isPaused());
+            mp.makeNewNowPlaying();
         }
     }
 

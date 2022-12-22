@@ -37,7 +37,7 @@ public class CafeConfig implements TwigConfig
         case "file":
             try
             {
-                Twig.addBranch(new FileBranch("bot.log", false, "[{event.level}] {event.message}\n"));
+                Twig.addBranch(new FileBranch("bot.log", false, "{event.time} [{event.level}] {event.message}\n"));
             }
             catch(FileNotFoundException err)
             {

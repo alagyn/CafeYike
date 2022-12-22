@@ -43,6 +43,8 @@ public class MusicPlayer implements AudioEventListener, AudioSendHandler
         public final int sleepTime;
         public final AudioManager manager;
 
+        private final Logger log = LoggerFactory.getLogger(getClass());
+
         public LeaveThread(int sleepTimeMillis, AudioManager manager)
         {
             this.sleepTime = sleepTimeMillis;
@@ -54,12 +56,14 @@ public class MusicPlayer implements AudioEventListener, AudioSendHandler
         {
             try
             {
+                log.trace("Starting Leave Thread");
                 Thread.sleep(sleepTime);
+                log.trace("Leaving VC");
                 Music.leave(manager);
             }
             catch(InterruptedException err)
             {
-                //pass
+                log.trace("Leave Thread Interrupted");
             }
         }
 
@@ -252,6 +256,11 @@ public class MusicPlayer implements AudioEventListener, AudioSendHandler
     public void onPlayerPause(AudioPlayer player)
     {
         log.trace("Player paused");
+        if(leaveThread != null)
+        {
+            log.trace("Restarting Leave Thread");
+            leaveThread.interrupt();
+        }
         leaveThread = new Thread(new MusicPlayer.LeaveThread(leaveTimeMillis, manager));
         leaveThread.start();
     }
@@ -262,7 +271,11 @@ public class MusicPlayer implements AudioEventListener, AudioSendHandler
     public void onPlayerResume(AudioPlayer player)
     {
         log.trace("Player resumed");
-        // TODO
+        if(leaveThread != null)
+        {
+            leaveThread.interrupt();
+            leaveThread = null;
+        }
     }
 
     /**
@@ -276,6 +289,7 @@ public class MusicPlayer implements AudioEventListener, AudioSendHandler
         {
             player.setPaused(false);
         }
+
         if(leaveThread != null)
         {
             leaveThread.interrupt();
