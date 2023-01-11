@@ -8,9 +8,10 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import org.bdd.cafeyike.commander.exceptions.CmdError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.bdd.cafeyike.commander.exceptions.CmdError;
 
 public class CafeDB
 {
@@ -20,7 +21,7 @@ public class CafeDB
 
     private Connection conn = null;
 
-    private static String ADD_YIKE_LOG_ST = null;
+    private static String ADD_NEW_USER_ST = null;
     private static String INC_YIKE_ST = null;
     private static String REM_YIKE_ST = null;
     private static String GET_YIKE_FOR_USER_ST = null;
@@ -76,7 +77,7 @@ public class CafeDB
         conn.setAutoCommit(true);
 
         // Yike Statements
-        ADD_YIKE_LOG_ST = loadStatement("yikes/addYikeLog.sql");
+        ADD_NEW_USER_ST = loadStatement("yikes/addNewUser.sql");
         INC_YIKE_ST = loadStatement("yikes/incYike.sql");
         REM_YIKE_ST = loadStatement("yikes/remYike.sql");
         GET_YIKE_FOR_USER_ST = loadStatement("yikes/getYikesForUser.sql");
@@ -244,19 +245,17 @@ public class CafeDB
     {
         try
         {
-            // Insert a new yike log, or do nothing, returning the ROWID
-            PreparedStatement s1 = prepare(ADD_YIKE_LOG_ST);
+            PreparedStatement s1 = prepare(ADD_NEW_USER_ST);
             s1.setLong(1, guildId);
             s1.setLong(2, userId);
-            ResultSet r1 = s1.executeQuery();
-            r1.next();
-            long userRef = r1.getLong(1);
-            r1.close();
+
+            s1.execute();
 
             // Add the new quote
             PreparedStatement s2 = prepare(ADD_QUOTE_ST);
-            s2.setLong(1, userRef);
-            s2.setString(2, content);
+            s2.setString(1, content);
+            s2.setLong(2, guildId);
+            s2.setLong(3, userId);
 
             ResultSet r2 = s2.executeQuery();
             r2.next();
@@ -266,6 +265,7 @@ public class CafeDB
         }
         catch(SQLException e)
         {
+            log.warn("Unable to add quote: " + e.getMessage());
             throw new CmdError("Unable to add quote: " + e.getMessage());
         }
     }

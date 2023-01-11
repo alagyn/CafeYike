@@ -2,6 +2,8 @@ package org.bdd.cafeyike.commands.music;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.bdd.cafeyike.CafeConfig;
 import org.bdd.cafeyike.commander.Bot;
@@ -46,6 +48,10 @@ public class Music extends Cog
     public static final String PLAY_BTN = "play";
     public static final String SHUF_BTN = "shuf";
     public static final String LOOP_BTN = "loop";
+
+    public static final String URL_RE_STR = "(?i)\\b((?:https?://|www\\d{0,3}[.]|[a-z0-9.\\-]+[.][a-z]{2,4}/)(?:[^\\s()<>]+|\\(([^\\s()<>]+|(\\([^\\s()<>]+\\)))*\\))+(?:\\(([^\\s()<>]+|(\\([^\\s()<>]+\\)))*\\)|[^\\s`!()\\[\\]{};:'\\\".,<>?«»“”‘’]))";
+
+    public static final Pattern URL_REGEX = Pattern.compile(URL_RE_STR);
 
     public Music(Bot bot)
     {
@@ -123,7 +129,16 @@ public class Music extends Cog
             sendError(event, "Not in a server");
         }
 
-        VoiceChannel voiceChannel = u.getVoiceState().getChannel().asVoiceChannel();
+        VoiceChannel voiceChannel = null;
+        try
+        {
+            voiceChannel = u.getVoiceState().getChannel().asVoiceChannel();
+        }
+        catch(NullPointerException e)
+        {
+            // pass
+        }
+
         MessageChannel textChannel = event.getChannel();
 
         if(voiceChannel == null)
@@ -148,6 +163,16 @@ public class Music extends Cog
         event.deferReply().queue();
         InteractionHook hook = event.getHook();
 
+        Matcher matcher = URL_REGEX.matcher(query);
+
+        boolean _isSearch = false;
+        if(!matcher.matches())
+        {
+            // If it isn't a URL, make it a query
+            query = "ytsearch:" + query;
+            _isSearch = true;
+        }
+
         AudioManager am = serv.getAudioManager();
 
         if(!am.isConnected())
@@ -164,6 +189,7 @@ public class Music extends Cog
 
         // This has to be final to store the up-value
         final MusicPlayer musicPlayer = (MusicPlayer) am.getSendingHandler();
+        final boolean isSearch = _isSearch;
 
         playerManager.loadItem(query, new AudioLoadResultHandler()
         {
@@ -188,20 +214,13 @@ public class Music extends Cog
 
             }
 
-            @Override
-            public synchronized void playlistLoaded(AudioPlaylist playlist)
+            private void loadPlaylist(AudioPlaylist playlist)
             {
-                log.trace("playlistLoaded()");
                 int len = playlist.getTracks().size();
                 StringBuilder text = new StringBuilder();
                 text.append("Playlist: ").append(playlist.getName()).append("\n");
 
                 text.append(len).append(" ").append(len == 1 ? "item." : "items.");
-
-                if(len <= 0)
-                {
-                    return;
-                }
 
                 int nextIdx = musicPlayer.queueLen();
 
@@ -219,6 +238,26 @@ public class Music extends Cog
                         new EmbedBuilder().setTitle("Added to Queue").setDescription(text.toString()).build())
                         .complete();
                 musicPlayer.makeNewNowPlaying();
+            }
+
+            private void loadQuery(AudioPlaylist playlist)
+            {
+
+            }
+
+            @Override
+            public synchronized void playlistLoaded(AudioPlaylist playlist)
+            {
+                log.trace("playlistLoaded() isSearch {}", isSearch);
+
+                if(isSearch)
+                {
+                    loadQuery(playlist);
+                }
+                else
+                {
+                    loadPlaylist(playlist);
+                }
             }
 
             @Override

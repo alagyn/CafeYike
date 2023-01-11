@@ -36,10 +36,10 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.Modal;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
+import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.dv8tion.jda.api.utils.FileUpload;
 
 public class Quote extends Cog
@@ -98,7 +98,17 @@ public class Quote extends Cog
         event.deferReply().queue();
         InteractionHook hook = event.getHook();
 
-        long quoteId = CafeDB.addQuote(serv.getIdLong(), user.getIdLong(), content);
+        long _quoteId = 0;
+        try
+        {
+            _quoteId = CafeDB.addQuote(serv.getIdLong(), user.getIdLong(), content);
+        }
+        catch(CmdError err)
+        {
+            sendFollowError(hook, err.getMessage());
+        }
+
+        final long quoteId = _quoteId;
 
         EmbedBuilder b = new EmbedBuilder().addField("Quote: " + user.getEffectiveName(), content, false)
                 .setFooter("10min to edit");
@@ -216,7 +226,8 @@ public class Quote extends Cog
         TextInput newQuote = TextInput.create("newQuote", "New Quote", TextInputStyle.SHORT).build();
 
         TextInput newTs = TextInput
-                .create("time", "New Timestamp: " + STR_DATE_FMT + " (24 hour clock)", TextInputStyle.SHORT).build();
+                .create("time", "New Timestamp: " + STR_DATE_FMT + " (24 hour clock)", TextInputStyle.SHORT)
+                .setRequired(false).build();
 
         Modal modal = Modal.create(Bot.makeId(QUOTE_MODAL, quoteId), "Edit Quote")
                 .addActionRows(ActionRow.of(newQuote), ActionRow.of(newTs)).build();
