@@ -87,7 +87,7 @@ public abstract class Cog
         throw new UsageError(msg);
     }
 
-    public void sendFollowError(InteractionHook hook, String msg)
+    public void sendError(InteractionHook hook, String msg)
     {
         hook.sendMessageEmbeds(new EmbedBuilder().setTitle("Error").setDescription(msg).build()).setEphemeral(true)
                 .queue();

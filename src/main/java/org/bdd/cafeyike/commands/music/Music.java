@@ -160,8 +160,7 @@ public class Music extends Cog
             sendError(event, "Empty query");
         }
 
-        event.deferReply().queue();
-        InteractionHook hook = event.getHook();
+        InteractionHook hook = event.deferReply().complete();
 
         Matcher matcher = URL_REGEX.matcher(query);
 
@@ -211,7 +210,6 @@ public class Music extends Cog
                             .queue();
                     musicPlayer.makeNewNowPlaying();
                 }
-
             }
 
             private void loadPlaylist(AudioPlaylist playlist)
@@ -265,7 +263,7 @@ public class Music extends Cog
             {
                 log.warn("No matches found");
 
-                sendFollowError(hook, "No matches found");
+                sendError(hook, "No matches found");
 
                 musicPlayer.makeNewNowPlaying();
             }
@@ -275,7 +273,7 @@ public class Music extends Cog
             {
                 // Notify the user that everything exploded
                 log.warn("Load failed: ", throwable);
-                sendFollowError(hook, "Load failed");
+                sendError(hook, "Load failed");
 
                 musicPlayer.makeNewNowPlaying();
             }

@@ -95,8 +95,7 @@ public class Quote extends Cog
             sendError(event, "Quote cannot be empty");
         }
 
-        event.deferReply().queue();
-        InteractionHook hook = event.getHook();
+        InteractionHook hook = event.deferReply().complete();
 
         long _quoteId = 0;
         try
@@ -105,7 +104,7 @@ public class Quote extends Cog
         }
         catch(CmdError err)
         {
-            sendFollowError(hook, err.getMessage());
+            sendError(hook, err.getMessage());
         }
 
         final long quoteId = _quoteId;
@@ -138,15 +137,22 @@ public class Quote extends Cog
 
         boolean showIds = event.getOption("show-ids", false, OptionMapping::getAsBoolean);
 
-        event.deferReply().queue();
-        InteractionHook hook = event.getHook();
+        InteractionHook hook = event.deferReply().complete();
 
         if(singleUser != null)
         {
             ArrayList<Member> users = new ArrayList<>();
             users.add(singleUser);
             // Get for a single user
-            quotes = CafeDB.getQuotesForUser(serv.getIdLong(), singleUser.getIdLong());
+            try
+            {
+                quotes = CafeDB.getQuotesForUser(serv.getIdLong(), singleUser.getIdLong());
+            }
+            catch(CmdError err)
+            {
+                sendError(hook, "Unable to get quotes");
+            }
+
             filename = singleUser.getId() + "_quotes.txt";
         }
         else
@@ -154,10 +160,17 @@ public class Quote extends Cog
             // Get for the server
             if(serv == null)
             {
-                sendFollowError(hook, "Cannot get quotes, not in server and no user supplied");
+                sendError(hook, "Cannot get quotes, not in server and no user supplied");
             }
 
-            quotes = CafeDB.getQuotesForServer(serv.getIdLong());
+            try
+            {
+                quotes = CafeDB.getQuotesForServer(serv.getIdLong());
+            }
+            catch(CmdError err)
+            {
+                sendError(hook, "Unable to get quotes");
+            }
 
             filename = serv.getId() + "_quotes.txt";
         }
@@ -188,8 +201,15 @@ public class Quote extends Cog
                     if(nick == null)
                     {
                         Member m = serv.getMemberById(q.userId);
-                        nick = m.getEffectiveName();
-                        nicknames.put(q.userId, nick);
+                        if(m != null)
+                        {
+                            nick = m.getEffectiveName();
+                            nicknames.put(q.userId, nick);
+                        }
+                        else
+                        {
+                            nick = "[Unkown User]";
+                        }
                     }
                 }
 
@@ -208,8 +228,7 @@ public class Quote extends Cog
         }
         catch(IOException e)
         {
-            log.error("Cannot create quote file : {}", e.getMessage());
-            throw new CmdError("Cannot create quote file: " + e.getMessage());
+            sendError(hook, "Cannot create quote file");
         }
 
         File f = new File(filename);
@@ -243,8 +262,7 @@ public class Quote extends Cog
         String newQuote = event.getValue("newQuote").getAsString();
         String newTsString = event.getValue("time").getAsString();
 
-        event.deferReply().queue();
-        InteractionHook hook = event.getHook();
+        InteractionHook hook = event.deferReply().complete();
 
         Timestamp newTs = null;
         if(!newTsString.isEmpty())
@@ -256,7 +274,7 @@ public class Quote extends Cog
             }
             catch(ParseException e)
             {
-                sendFollowError(hook, "Cannot parse new timestamp");
+                sendError(hook, "Cannot parse new timestamp");
             }
         }
 

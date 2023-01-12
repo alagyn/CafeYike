@@ -7,6 +7,7 @@ import org.bdd.cafeyike.CafeDB;
 import org.bdd.cafeyike.CafeDB.YikeEntry;
 import org.bdd.cafeyike.commander.Bot;
 import org.bdd.cafeyike.commander.Cog;
+import org.bdd.cafeyike.commander.exceptions.CmdError;
 import org.bdd.cafeyike.commander.utils.DoAfter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,9 +98,18 @@ public class Yike extends Cog
 
         String nick;
 
-        event.deferReply().queue();
+        InteractionHook hook = event.deferReply().complete();
 
-        int newval = CafeDB.addYike(serv.getIdLong(), recip.getIdLong());
+        int newval = -1;
+
+        try
+        {
+            newval = CafeDB.addYike(serv.getIdLong(), recip.getIdLong());
+        }
+        catch(CmdError err)
+        {
+            sendError(hook, "Cannot add yike");
+        }
 
         nick = recip.getEffectiveName();
 
@@ -279,8 +289,7 @@ public class Yike extends Cog
             sendError(event, "Cannot get yikes outside a server");
         }
 
-        event.deferReply().queue();
-        InteractionHook hook = event.getHook();
+        InteractionHook hook = event.deferReply().complete();
 
         if(user != null)
         {
