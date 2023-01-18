@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="/assets/YikeBotLogoMk2.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YikeManager</title>
+
+    <link href="/node_modules/bootstrap/dist/css/bootstrap.css" rel="stylesheet">
+    <link href="/style/ym.css" rel="stylesheet">
+</head>
+
+<body>
+    <br>
+    <div id="app">
+        <!-- Top Row -->
+        <div class="row">
+            <div class="col-md-2">
+                <div class="container logoContainer">
+                    <img src="/assets/YikeBotLogoMk2.ico" alt="YikeBot Logo" class="img-fluid mx-auto d-block">
+                </div>
+            </div>
+            <div class="col-md-5">
+                <div class="container container-sm">
+                    Server Uptime: <div class="text-nowrap">[[ server_uptime_str ]]</div>
+                    <br>
+                    Bot Status: <div class="text-nowrap">[[ bot_status ]]</div>
+                    <br>
+                    Bot Uptime: <div class="text-nowrap">[[ bot_uptime_str ]]</div>
+                    <br>
+                    <button v-if="bot_status == STATUS_ONLINE" @click="bot_shutdown" class="btn btn-danger">
+                        Shutdown
+                    </button>
+                    <button v-else @click="bot_startup" class="btn btn-primary">
+                        Startup
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- End Top Row -->
+        <!-- TODO console logs-->
+        <!-- TODO yike/user DB -->
+        <!-- TODO quote DB -->
+    </div>
+</body>
+
+<script src="/node_modules/vue/dist/vue.global.js"></script>
+<script src="/node_modules/axios/dist/axios.min.js"></script>
+<script type="module" src="/scripts/main.js"></script>
+
+</html>

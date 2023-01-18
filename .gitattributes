@@ -18,3 +18,4 @@
 *.whl binary
 *.PNG binary
 *.tflite binary
+*.ico binary

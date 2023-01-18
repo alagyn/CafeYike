@@ -207,7 +207,7 @@ public class Music extends Cog
                 {
                     hook.sendMessageEmbeds(
                             new EmbedBuilder().setTitle("Added to Queue").setDescription(track.getInfo().title).build())
-                            .queue();
+                            .complete();
                     musicPlayer.makeNewNowPlaying();
                 }
             }
