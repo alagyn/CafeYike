@@ -22,3 +22,12 @@ body {
     width: 100%;
     min-height: 100%;
 }
+
+.mono {
+    color: rgb(255, 230, 0);
+    font-family: monospace;
+}
+
+.status-table td:nth-child(1) {
+    text-align: right;
+}

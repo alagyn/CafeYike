@@ -20,8 +20,6 @@ import org.bdd.cafeyike.commander.Bot;
 import org.bdd.cafeyike.commander.Cog;
 import org.bdd.cafeyike.commander.exceptions.CmdError;
 import org.bdd.cafeyike.commander.utils.DoAfter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
@@ -44,7 +42,6 @@ import net.dv8tion.jda.api.utils.FileUpload;
 
 public class Quote extends Cog
 {
-    private final Logger log = LoggerFactory.getLogger(getClass());
 
     private static final String QUOTE_MODAL = "quoteM";
     private static final String EDIT_BTN = "edit";

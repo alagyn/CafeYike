@@ -40,3 +40,12 @@ The **STACK**
 
 This is a Python household, the JavaScript will be kept to a minimum and all backend routing/API is handled by FastAPI.
 
+
+---
+
+Official YikeBot Color
+
+| Color  | RGB         | Hex RGBA     |
+|--------|-------------|--------------|
+| Yellow | `255, 230, 0` | `ffe600ff` |
+| Cyan   | `0, 153, 255` | `0099ffff` |

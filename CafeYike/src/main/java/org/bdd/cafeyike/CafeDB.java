@@ -10,7 +10,9 @@ import java.util.LinkedList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import org.sqlite.SQLiteConfig;
+import org.sqlite.SQLiteJDBCLoader;
+import org.sqlite.util.OSInfo;
 import org.bdd.cafeyike.commander.exceptions.CmdError;
 
 public class CafeDB
@@ -61,13 +63,35 @@ public class CafeDB
 
     public void init() throws SQLException
     {
-        File dbFile = new File("dat/cafe.db");
+        File dbFile = new File(CafeConfig.getEnv("CafeYikeDB"));
         boolean needToInit = !dbFile.exists();
 
         try
         {
+            SQLiteConfig sqlConfig = new SQLiteConfig();
+            sqlConfig.setTempStoreDirectory("../temp");
             Class.forName("org.sqlite.JDBC");
-            conn = DriverManager.getConnection("jdbc:sqlite:dat/cafe.db");
+
+            // TODO REMOVE
+            String sqliteNativeLibraryName = System.mapLibraryName("sqlitejdbc");
+            String packagePath = SQLiteJDBCLoader.class.getPackage().getName().replaceAll("\\.", "/");
+            String sqliteNativeLibraryPath = String.format("/%s/native/%s", packagePath,
+                    OSInfo.getNativeLibFolderPathForCurrentOS());
+            System.out.println(packagePath);
+            System.out.println(sqliteNativeLibraryPath);
+            String fullpath = sqliteNativeLibraryPath + "/" + sqliteNativeLibraryName;
+            System.out.println(fullpath);
+            System.out.println(SQLiteJDBCLoader.class.getResource(fullpath));
+
+            String tempFolder = new File(System.getProperty("org.sqlite.tmpdir", System.getProperty("java.io.tmpdir")))
+                    .getAbsolutePath();
+            System.out.println(tempFolder);
+            // TODO REMOVE ^^^
+
+            StringBuilder ss = new StringBuilder();
+            ss.append("jdbc:sqlite:").append(dbFile.getAbsolutePath());
+            log.info("CafeDB.init() Loading DB {}", ss.toString());
+            conn = DriverManager.getConnection(ss.toString());
         }
         catch(ClassNotFoundException e)
         {

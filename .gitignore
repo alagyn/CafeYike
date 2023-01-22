@@ -6,7 +6,7 @@ database_upgrades
 target
 dat
 
-*.config
+*.conf
 *.dat
 *.db
 *.json

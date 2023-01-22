@@ -20,8 +20,6 @@ public class CafeYike
             GatewayIntent.GUILD_VOICE_STATES
     };
 
-    public static final String YIKE_LOG = "./dat/yikelog.json";
-
     public static void main(String[] args)
     {
         // Main logger, also forces the config file to be loaded
@@ -39,6 +37,7 @@ public class CafeYike
         catch(SQLException e)
         {
             log.error("Unable to start database:", e);
+            log.error("STATE: {}", e.getSQLState());
             System.exit(-1);
         }
         catch(Exception e)

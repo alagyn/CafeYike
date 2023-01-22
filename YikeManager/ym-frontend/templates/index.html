@@ -23,12 +23,26 @@
             </div>
             <div class="col-md-5">
                 <div class="container container-sm">
-                    Server Uptime: <div class="text-nowrap">[[ server_uptime_str ]]</div>
-                    <br>
-                    Bot Status: <div class="text-nowrap">[[ bot_status ]]</div>
-                    <br>
-                    Bot Uptime: <div class="text-nowrap">[[ bot_uptime_str ]]</div>
-                    <br>
+                    <table class="table-sm status-table">
+                        <tbody class="text-nowrap">
+                            <tr>
+                                <td>Server Uptime :</td>
+                                <td><code class="mono">[[ server_uptime_str ]]</code></td>
+                            </tr>
+                            <tr>
+                                <td>Bot Exec :</td>
+                                <td><code class="mono">{{ bot_exec }}</code></td>
+                            </tr>
+                            <tr>
+                                <td>Bot Status :</td>
+                                <td><code class="mono">[[ bot_status ]]</code></td>
+                            </tr>
+                            <tr>
+                                <td>Bot Uptime :</td>
+                                <td><code class="mono">[[ bot_uptime_str ]]</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
                     <button v-if="bot_status == STATUS_ONLINE" @click="bot_shutdown" class="btn btn-danger">
                         Shutdown
                     </button>

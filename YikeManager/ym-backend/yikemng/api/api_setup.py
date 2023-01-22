@@ -10,14 +10,13 @@ from fastapi.middleware.cors import CORSMiddleware
 import mimetypes
 mimetypes.add_type('text/javascript', '.js', True)
 
+import yikemng.api.admin as admin
+import yikemng.api.bot_control as bot_control
+from yikemng.config_manager import YMConfig
+
 app = FastAPI()
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:8080"]
-)
 
-
-FRONTEND_DIR = 'ym-frontend'
+FRONTEND_DIR = '../ym-frontend'
 TEMPLATE_DIR = os.path.join(FRONTEND_DIR, 'templates')
 
 templates = Jinja2Templates(directory=os.path.join(FRONTEND_DIR, 'templates'))
@@ -39,12 +38,14 @@ page_router = APIRouter(tags=['Pages'])
 
 @page_router.get("/", response_class=HTMLResponse)
 async def get_root(request: Request):
-    return templates.TemplateResponse('index.html', {'request': request})
+    return templates.TemplateResponse(
+        'index.html',
+        {
+            'request': request,
+            'bot_exec': os.path.split(YMConfig.botFile)[1]
+        })
 
 ##### Subrouters
-
-import yikemng.api.admin as admin
-import yikemng.api.bot_control as bot_control
 
 app.include_router(page_router)
 app.include_router(admin.router)

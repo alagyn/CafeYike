@@ -20,6 +20,8 @@ function makeTimeStr(secs)
     return `${days} days, ${hrs} hrs, ${mins} mins, ${secs} secs`
 }
 
+// TODO poll backend status occasionaly
+
 const app = createApp({
     setup() {
         

@@ -29,7 +29,7 @@ public class Bot
 
     public Bot()
     {
-        token = CafeConfig.getConfig("DISCORD_TOKEN");
+        token = CafeConfig.getConfig("token");
         if(token == null || token.isEmpty())
         {
             throw new CmdError("Bot() login token not defined, system.config: DISCORD_TOKEN = [token]");
