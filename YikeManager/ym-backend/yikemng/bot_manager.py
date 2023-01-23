@@ -77,7 +77,7 @@ class _BotManager:
         if self.bot_proc is not None:
             try:
                 print("Shutting down bot")
-                self.bot_proc.send_signal(signal.CTRL_C_EVENT)
+                self.bot_proc.send_signal(signal.SIGINT)
                 print("Bot shutdown")
             except KeyboardInterrupt:
                 pass
