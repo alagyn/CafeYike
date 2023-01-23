@@ -1,5 +1,12 @@
 database_upgrades
-*/deprecated/*
+**/deprecated/**
+**/temp/**
+YikeManager/ym-frontend/node_modules
+
+**/ignore/**
+**/__pycache__/**
+**/venv/**
+
 
 .settings
 .vscode
