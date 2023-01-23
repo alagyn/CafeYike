@@ -1,12 +1,17 @@
 import configparser
 import os
 
-
-_CONFIG = os.environ["YM_SYS_CFG"]
-if _CONFIG is None or len(_CONFIG) == 0:
+try:
+    _CONFIG = os.environ["YM_SYS_CFG"]
+except KeyError:
     _CONFIG = 'system.cfg'
 
 _configs = {}
+
+if not os.path.exists(_CONFIG):
+    print(f"Cannot find system config: \"{os.path.abspath(_CONFIG)}\".")
+    print("Set YM_SYS_CFG env var")
+    exit(0)
 
 print("Loading Configs")
 with open(_CONFIG, mode='r') as f:

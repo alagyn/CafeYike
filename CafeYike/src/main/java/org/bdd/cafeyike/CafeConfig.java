@@ -8,6 +8,8 @@ import java.util.Map;
 import org.bdd.cafeyike.commander.exceptions.BotError;
 import org.bdd.twig.Twig;
 import org.bdd.twig.TwigConfig;
+import org.bdd.twig.Twig.NameAlign;
+import org.bdd.twig.Twig.NameMode;
 import org.bdd.twig.branch.StreamBranch;
 
 public class CafeConfig implements TwigConfig
@@ -37,7 +39,8 @@ public class CafeConfig implements TwigConfig
         Twig.setLevel(loglevel);
         Twig.addBlock("com.sedmelluq");
         Twig.addBlock("net.dv8");
-
+        Twig.setNameMode(NameMode.ClassName);
+        Twig.setNameAlign(NameAlign.Center);
     }
 
     public static String getConfig(String key)

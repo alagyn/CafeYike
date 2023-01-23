@@ -16,7 +16,6 @@ dat
 *.conf
 *.dat
 *.db
-*.json
 *.class
 *.log
 
