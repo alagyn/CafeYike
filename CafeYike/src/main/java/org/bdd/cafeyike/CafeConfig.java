@@ -32,8 +32,7 @@ public class CafeConfig implements TwigConfig
             System.exit(0);
         }
 
-        Twig.addBranch(new StreamBranch(System.out,
-                "{event.time} [{color.level}{event.level}{color.end}] {event.name} {event.message}\n"));
+        Twig.addBranch(new StreamBranch(System.out, "{event.time} [{event.level}] {event.name} {event.message}\n"));
 
         String loglevel = getConfig("loglevel");
         Twig.setLevel(loglevel);

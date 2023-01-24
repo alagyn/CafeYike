@@ -37,6 +37,7 @@ class _BotManager:
         self.bot_proc: Optional[sp.Popen] = None
         self.log_queue: deque[str] = deque(maxlen=YMConfig.maxLogLines)
         self.log_thr: Optional[thr.Thread] = None
+        self.log_change: bool = False
 
 
     def startup(self):
@@ -83,17 +84,16 @@ class _BotManager:
                 pass
             self.bot_proc = None
 
-        # TODO delete temp dir contents?
+        # Use this as the time since last online
+        self.bot_startTime = time.time()
+
 
     def isOnline(self) -> bool:
         return self.status == BotStatus.ONLINE
 
     def getStatusPack(self) -> BotStatusPackage:
         now = time.time()
-        if self.isOnline():
-            bot_uptime = int(now - self.bot_startTime)
-        else:
-            bot_uptime = 0
+        bot_uptime = int(now - self.bot_startTime)
 
         server_uptime = int(now - self.server_startTime)
 
@@ -109,6 +109,7 @@ class _BotManager:
             for line in iter(self.bot_proc.stdout.readline, ''):
                 self.log_queue.append(line)
                 print(line, end='')
+                self.log_change = True
 
             # Should only get here when stdout returns EOF
             if self.status != BotStatus.OFFLINE:

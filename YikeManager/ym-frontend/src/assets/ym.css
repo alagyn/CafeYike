@@ -4,12 +4,17 @@ body {
 
 .container {
     background-color: rgb(54, 61, 61);
-    border-color: #ffd900;
     outline-offset: 10px;
     padding: 10px;
     color: #e8e5e5;
+    margin-bottom: 10px;
+}
+
+.ym-container {
+    border-color: rgb(0, 153, 255);
     border-radius: 10px;
-    border-width: 10px;
+    border-style: solid;
+    border-width: 2px;
 }
 
 .logoContainer {
@@ -26,6 +31,9 @@ body {
 .mono {
     color: rgb(255, 230, 0);
     font-family: monospace;
+    background-color: #2e2e2e;
+    padding: 4px;
+    border-radius: 3px;
 }
 
 .status-table td:nth-child(1) {
