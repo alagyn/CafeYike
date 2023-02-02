@@ -1,5 +1,6 @@
 package org.bdd.cafeyike.commands.music;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -31,6 +32,8 @@ import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.managers.AudioManager;
 
 import org.slf4j.Logger;
@@ -40,6 +43,65 @@ public class Music extends Cog
 {
     private final Logger log = LoggerFactory.getLogger(getClass());
 
+    private static final int SELECT_TIMEOUT = 30 * 1000;
+
+    private class QueryResult implements Runnable
+    {
+
+        public final AudioPlaylist playlist;
+        public final InteractionHook hook;
+        public Thread waitThread;
+        public final MusicPlayer player;
+        public final long guildID;
+        public final Message selectMessage;
+
+        public QueryResult(AudioPlaylist playlist, InteractionHook hook, MusicPlayer player, long guildID,
+                Message selectMessage)
+        {
+            this.playlist = playlist;
+            this.hook = hook;
+            this.player = player;
+            this.waitThread = null;
+            this.guildID = guildID;
+            this.selectMessage = selectMessage;
+        }
+
+        public void startThread()
+        {
+            waitThread = new Thread(this);
+            waitThread.start();
+        }
+
+        public void stopThread()
+        {
+            if(waitThread.isAlive())
+            {
+                waitThread.interrupt();
+            }
+        }
+
+        @Override
+        public void run()
+        {
+            try
+            {
+                Thread.sleep(SELECT_TIMEOUT);
+            }
+            catch(InterruptedException err)
+            {
+                // PASS
+            }
+
+            queryMap.remove(guildID);
+            if(selectMessage != null)
+            {
+                selectMessage.delete().queue();
+            }
+        }
+    }
+
+    private HashMap<Long, QueryResult> queryMap = new HashMap<>();
+
     private AudioPlayerManager playerManager;
     public final int leaveTimeMillis;
 
@@ -48,6 +110,7 @@ public class Music extends Cog
     public static final String PLAY_BTN = "play";
     public static final String SHUF_BTN = "shuf";
     public static final String LOOP_BTN = "loop";
+    public static final String SELECT_BTN = "sel";
 
     public static final String URL_RE_STR = "(?i)\\b((?:https?://|www\\d{0,3}[.]|[a-z0-9.\\-]+[.][a-z]{2,4}/)(?:[^\\s()<>]+|\\(([^\\s()<>]+|(\\([^\\s()<>]+\\)))*\\))+(?:\\(([^\\s()<>]+|(\\([^\\s()<>]+\\)))*\\)|[^\\s`!()\\[\\]{};:'\\\".,<>?«»“”‘’]))";
 
@@ -80,6 +143,7 @@ public class Music extends Cog
         registerBtnFunc(this::playBtn, PLAY_BTN);
         registerBtnFunc(this::loopBtn, LOOP_BTN);
         registerBtnFunc(this::shuffleBtn, SHUF_BTN);
+        registerBtnFunc(this::selectBtn, SELECT_BTN);
 
         return out;
     }
@@ -240,7 +304,33 @@ public class Music extends Cog
 
             private void loadQuery(AudioPlaylist playlist)
             {
+                long guildID = serv.getIdLong();
 
+                StringBuilder text = new StringBuilder();
+                int numResults = playlist.getTracks().size();
+                int limit = numResults < 5 ? numResults : 5;
+
+                Button[] btns = new Button[limit];
+
+                for(int i = 0; i < limit; ++i)
+                {
+                    AudioTrack track = playlist.getTracks().get(i);
+                    text.append(i + 1).append(") ").append(track.getInfo().title).append("\n");
+
+                    StringBuilder idBuilder = new StringBuilder();
+                    idBuilder.append(SELECT_BTN).append(":").append(guildID).append(":").append(i);
+                    btns[i] = (Button.primary(idBuilder.toString(), "" + (i + 1)));
+                }
+
+                Message selectMessage = hook
+                        .editOriginalEmbeds(
+                                new EmbedBuilder().setTitle("Select Item:").setDescription(text.toString()).build())
+                        .setComponents(ActionRow.of(btns)).complete();
+
+                QueryResult q = new QueryResult(playlist, hook, musicPlayer, guildID, selectMessage);
+                queryMap.put(guildID, q);
+
+                q.startThread();
             }
 
             @Override
@@ -248,13 +338,20 @@ public class Music extends Cog
             {
                 log.trace("playlistLoaded() isSearch {}", isSearch);
 
-                if(isSearch)
+                try
                 {
-                    loadQuery(playlist);
+                    if(isSearch)
+                    {
+                        loadQuery(playlist);
+                    }
+                    else
+                    {
+                        loadPlaylist(playlist);
+                    }
                 }
-                else
+                catch(Exception err)
                 {
-                    loadPlaylist(playlist);
+                    log.error("Music.playlistLoaded() Error:", err);
                 }
             }
 
@@ -295,6 +392,33 @@ public class Music extends Cog
         }
 
         return (MusicPlayer) am.getSendingHandler();
+    }
+
+    private void selectBtn(ButtonInteractionEvent event, String data)
+    {
+        event.deferEdit().queue();
+        String[] args = data.split(":");
+        long guildID = Long.parseLong(args[0]);
+        int selected = Integer.parseInt(args[1]);
+
+        QueryResult q = queryMap.get(guildID);
+        // This will delete the msg and remove from the map
+        q.stopThread();
+
+        AudioTrack track = q.playlist.getTracks().get(selected);
+        q.player.addToQueue(track);
+
+        q.hook.sendMessageEmbeds(
+                new EmbedBuilder().setTitle("Added to Queue").setDescription(track.getInfo().title).build()).complete();
+
+        if(q.player.endOfQueue())
+        {
+            q.player.playIdx(q.player.queueLen() - 1);
+        }
+        else
+        {
+            q.player.makeNewNowPlaying();
+        }
     }
 
     private void nextBtn(ButtonInteractionEvent event, String data)

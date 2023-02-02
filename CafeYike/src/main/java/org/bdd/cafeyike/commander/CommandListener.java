@@ -176,4 +176,5 @@ public class CommandListener extends ListenerAdapter
         }
         api.updateCommands().addCommands(toRegister);
     }
+
 }

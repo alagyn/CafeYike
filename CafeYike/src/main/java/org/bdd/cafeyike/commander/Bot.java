@@ -25,7 +25,7 @@ public class Bot
     private JDA api;
     private final String token;
 
-    private CommandListener cl = null;
+    public final CommandListener listener;
 
     public Bot()
     {
@@ -35,12 +35,12 @@ public class Bot
             throw new CmdError("Bot() login token not defined, system.config: DISCORD_TOKEN = [token]");
         }
 
-        cl = new CommandListener();
+        listener = new CommandListener();
     }
 
     public void addCog(Cog cog)
     {
-        cl.addCog(cog);
+        listener.addCog(cog);
     }
 
     public void init(GatewayIntent... intents) throws BotError
@@ -53,12 +53,12 @@ public class Bot
         initted = true;
 
         JDABuilder temp_builder = JDABuilder.createDefault(token, Arrays.asList(intents));
-        temp_builder.addEventListeners(cl);
+        temp_builder.addEventListeners(listener);
         temp_builder.setMemberCachePolicy(MemberCachePolicy.ALL);
         temp_builder.setChunkingFilter(ChunkingFilter.ALL);
         api = temp_builder.build();
 
-        cl.registerCommands(api);
+        listener.registerCommands(api);
 
         Runtime.getRuntime().addShutdownHook(new Thread()
         {
@@ -80,7 +80,7 @@ public class Bot
     private void intShutdown()
     {
         log.info("Shutting down Command Listener");
-        cl.shutdown();
+        listener.shutdown();
         api.getPresence().setPresence(OnlineStatus.OFFLINE, false);
         log.info("Exitting");
     }

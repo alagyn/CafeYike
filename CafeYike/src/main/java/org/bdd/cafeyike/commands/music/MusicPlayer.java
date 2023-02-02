@@ -186,6 +186,12 @@ public class MusicPlayer implements AudioEventListener, AudioSendHandler
 
     public synchronized void makeNewNowPlaying()
     {
+        if(currentTrack == null)
+        {
+            log.warn("Cannot make now playing, current track is null");
+            return;
+        }
+
         nowPlayingMsg.delete().queue();
 
         nowPlayingMsg = textChannel
