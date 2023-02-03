@@ -28,3 +28,4 @@ class YMConfig:
     dbFile = _configs['CafeYikeDB']
     tempDir = _configs['TempDir']
     maxLogLines = int(_configs['MaxLogLines'])
+    frontendDir = _configs['FrontendDir']

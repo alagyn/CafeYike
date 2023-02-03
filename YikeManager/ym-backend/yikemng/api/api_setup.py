@@ -16,7 +16,7 @@ from yikemng.config_manager import YMConfig
 
 app = FastAPI()
 
-FRONTEND_DIR = '../ym-frontend/dist/'
+FRONTEND_DIR = YMConfig.frontendDir
 
 page_router = APIRouter(tags=['Pages'])
 
@@ -31,7 +31,7 @@ app.include_router(admin.router)
 app.include_router(bot_control.router)
 
 # This goes last so that other api's take precendence
-app.mount("/assets", StaticFiles(directory="../ym-frontend/dist/assets"), name='root')
+app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIR, "assets")), name='root')
 
 
 # Hardcode because mounting as root breaks things

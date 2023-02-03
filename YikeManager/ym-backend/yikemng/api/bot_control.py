@@ -41,15 +41,20 @@ async def bot_cmd(cmd: BotCmd, response: Response) -> BotStatusPackage:
 async def bot_status() -> BotStatusPackage:
     return manager.getStatusPack()
 
+class LogEntry (BaseModel):
+    lines: List[str]
+    num: int
 
 @router.get("/logs", status_code=200)
-async def bot_logs(response: Response, force: bool = False) -> List[str]:
-    if force or manager.log_change:
-        manager.log_change = False
-        return list(manager.log_queue)
+async def bot_logs(response: Response, force: bool = False, lastLine: int = 0) -> LogEntry:
+    if force or lastLine != manager.log_num:
+        return LogEntry(
+            lines=list(manager.log_queue),
+            num = manager.log_num
+            )
     else:
         response.status_code = status.HTTP_304_NOT_MODIFIED
-        return []
+        return LogEntry(lines=[], num=lastLine)
 
 
 @router.get("/exec", status_code=200)

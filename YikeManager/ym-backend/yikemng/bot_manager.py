@@ -37,8 +37,7 @@ class _BotManager:
         self.bot_proc: Optional[sp.Popen] = None
         self.log_queue: deque[str] = deque(maxlen=YMConfig.maxLogLines)
         self.log_thr: Optional[thr.Thread] = None
-        self.log_change: bool = False
-
+        self.log_num: int = 0
 
     def startup(self):
         if self.status != BotStatus.OFFLINE:
@@ -109,7 +108,7 @@ class _BotManager:
             for line in iter(self.bot_proc.stdout.readline, ''):
                 self.log_queue.append(line)
                 print(line, end='')
-                self.log_change = True
+                self.log_num += 1
 
             # Should only get here when stdout returns EOF
             if self.status != BotStatus.OFFLINE:

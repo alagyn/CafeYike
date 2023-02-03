@@ -160,7 +160,8 @@ public class CafeDB
         }
         catch(SQLException e)
         {
-            log.error("Cannot add yike: ", e.getSQLState());
+            log.error("CafeDB.addYike() Cannot add yike: ", e.getMessage());
+            log.error("CafeDB.addYike() SQL State: {}", e.getSQLState());
             throw new CmdError("Unable to update yikes: " + e.getMessage());
         }
     }

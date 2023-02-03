@@ -1,0 +1,39 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "CafeYike",
+            "cwd": "${workspaceFolder}",
+            "type": "java",
+            "request": "launch",
+            "env": {
+                "YM_SYS_CFG": "${workspaceFolder}/system.conf",
+                "CafeYikeDB": "${workspaceFolder}/dat/cafe.db",
+            },
+            "sourcePaths": [
+                "${workspaceFolder}/CafeYike"
+            ],
+            "mainClass": "org.bdd.cafeyike.CafeYike",
+            "projectName": "CafeYike"
+        },
+        {
+            "name": "YikeManager",
+            "cwd": "${workspaceFolder}/YikeManager/ym-backend",
+            "type": "python",
+            "request": "launch",
+            "module": "uvicorn",
+            "args": [
+                "yikemng.__main__:app",
+                "--reload",
+                "--host=0.0.0.0"
+            ],
+            "env": {
+                "YM_SYS_CFG": "${workspaceFolder}/system.conf",
+            },
+            "justMyCode": true
+        }
+    ]
+}

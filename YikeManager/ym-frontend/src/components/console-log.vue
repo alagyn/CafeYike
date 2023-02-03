@@ -9,10 +9,13 @@ const console_log_str = computed(() => {
     return console_logs.value.join("")
 })
 
+let log_num = 0
+
 function updateLogs(force: boolean) {
-    axios.get(`/bot/logs/?force=${force}`)
+    axios.get(`/bot/logs/?force=${force}&num=${log_num}`)
         .then(response => {
-            console_logs.value = response.data
+            console_logs.value = response.data.lines
+            log_num = response.data.num
         })
         .catch(error => {
             if (error.response.status != 304) {
@@ -47,6 +50,5 @@ onMounted(() => {
         <button class="btn btn-secondary" @click="toggleLog()">{{ log_btn_str }}</button>
         <pre v-if="show_log" class="mono"><code>{{ console_log_str }}</code></pre>
     </div>
-
 </template>
 

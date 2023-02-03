@@ -1,19 +1,22 @@
 database_upgrades
-**/deprecated/**
-**/temp/**
 YikeManager/ym-frontend/node_modules
 
-**/ignore/**
-**/__pycache__/**
-**/venv/**
-
+**/deprecated*
+**/temp
+**/ignore
+**/__pycache__
+**/venv
+**/dist
 
 .settings
-.vscode
 target
 dat
 
-*.conf
+token.txt
+test-token.txt
+docker/build
+
+system.conf
 *.dat
 *.db
 *.class

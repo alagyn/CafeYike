@@ -13,10 +13,10 @@ from uvicorn.server import Server
 
 if __name__ == '__main__':
     config = Config(
-        'yikemng.main:app', 
+        'yikemng.__main__:app', 
         port=8000,
         log_level='debug',
-        reload=True,
+        reload=False,
         host='0.0.0.0',
         forwarded_allow_ips='*'
         )

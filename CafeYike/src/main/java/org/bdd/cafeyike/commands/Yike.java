@@ -23,6 +23,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 
 public class Yike extends Cog
@@ -82,23 +83,22 @@ public class Yike extends Cog
 
     public void yike(SlashCommandInteractionEvent event)
     {
+        InteractionHook hook = event.deferReply().complete();
         Member recip = event.getOption("user").getAsMember();
 
         if(recip == null)
         {
-            sendError(event, "Cannot unyike user");
+            sendError(hook, "Cannot unyike user");
         }
 
         Guild serv = event.getGuild();
 
         if(serv == null)
         {
-            sendError(event, "Cannot yike outside of a server");
+            sendError(hook, "Cannot yike outside of a server");
         }
 
         String nick;
-
-        InteractionHook hook = event.deferReply().complete();
 
         int newval = -1;
 
@@ -121,7 +121,7 @@ public class Yike extends Cog
     @Override
     public void shutdown()
     {
-        // PAss
+        // Pass
     }
 
     private EmbedBuilder unyikeMessage(int up, int down)
@@ -132,25 +132,26 @@ public class Yike extends Cog
 
     public void unyike(SlashCommandInteractionEvent event)
     {
+        InteractionHook hook = event.deferReply(false).complete();
         Member recip = event.getOption("user").getAsMember();
 
         if(recip == null)
         {
-            sendError(event, "Cannot unyike user");
+            sendError(hook, "Cannot unyike user");
         }
 
         Guild serv = event.getGuild();
 
         if(serv == null)
         {
-            sendError(event, "Cannot unyike outside a server");
+            sendError(hook, "Cannot unyike outside a server");
         }
 
         int curVal = CafeDB.getYikesForUser(serv.getIdLong(), recip.getIdLong());
 
         if(curVal <= 0)
         {
-            sendError(event, "No negative yikes allowed");
+            sendError(hook, "No negative yikes allowed");
         }
 
         Boolean requestAdmin = event.getOption("admin", false, OptionMapping::getAsBoolean);
@@ -160,25 +161,26 @@ public class Yike extends Cog
             if(event.getMember().getPermissions().contains(Permission.ADMINISTRATOR))
             {
                 int newVal = CafeDB.remYike(serv.getIdLong(), recip.getIdLong());
-                event.replyEmbeds(new EmbedBuilder()
+                hook.editOriginalEmbeds(new EmbedBuilder()
                         .addField("Admin Un-Yike", recip.getEffectiveName() + " now has " + newVal + " yikes.", false)
                         .build()).queue();
                 return;
             }
 
-            sendError(event, "You must be an admin to use the admin flag");
+            sendError(hook, "You must be an admin to use the admin flag");
         }
 
         if(voters.containsKey(serv.getIdLong()))
         {
-            sendError(event, "Cannot unyike, still waiting for previous voting to close");
+            sendError(hook, "Cannot unyike, still waiting for previous voting to close");
         }
 
         UnyikeVoter voter = new UnyikeVoter();
         voters.put(serv.getIdLong(), voter);
 
-        InteractionHook hook = event.reply(recip.getAsMention()).addEmbeds(unyikeMessage(0, 0).build())
-                .addActionRow(Button.success(unyikeBtn, "Cleanse"), Button.danger(yikeBtn, "Sustain")).complete();
+        hook.editOriginal(recip.getAsMention()).setEmbeds(unyikeMessage(0, 0).build())
+                .setComponents(ActionRow.of(Button.success(unyikeBtn, "Cleanse"), Button.danger(yikeBtn, "Sustain")))
+                .complete();
 
         new DoAfter(voteTimeSec, x ->
         {
