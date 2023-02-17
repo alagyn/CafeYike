@@ -72,27 +72,27 @@ public class Quote extends Cog
 
     public void addQuote(SlashCommandInteractionEvent event)
     {
+        InteractionHook hook = event.getHook();
+
         Member user = event.getOption(USER_OP).getAsMember();
         Guild serv = event.getGuild();
 
         if(user == null)
         {
-            sendError(event, "Cannot quote user");
+            sendError(hook, "Cannot quote user");
         }
 
         if(serv == null)
         {
-            sendError(event, "Cannot quote outside a server");
+            sendError(hook, "Cannot quote outside a server");
         }
 
         String content = event.getOption(QUOTE_OP).getAsString();
 
         if(content == null || content.isEmpty())
         {
-            sendError(event, "Quote cannot be empty");
+            sendError(hook, "Quote cannot be empty");
         }
-
-        InteractionHook hook = event.deferReply().complete();
 
         long _quoteId = 0;
         try
@@ -134,7 +134,7 @@ public class Quote extends Cog
 
         boolean showIds = event.getOption("show-ids", false, OptionMapping::getAsBoolean);
 
-        InteractionHook hook = event.deferReply().complete();
+        InteractionHook hook = event.getHook();
 
         if(singleUser != null)
         {
@@ -259,7 +259,7 @@ public class Quote extends Cog
         String newQuote = event.getValue("newQuote").getAsString();
         String newTsString = event.getValue("time").getAsString();
 
-        InteractionHook hook = event.deferReply().complete();
+        InteractionHook hook = event.getHook();
 
         Timestamp newTs = null;
         if(!newTsString.isEmpty())

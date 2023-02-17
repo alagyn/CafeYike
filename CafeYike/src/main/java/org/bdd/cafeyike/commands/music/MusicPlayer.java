@@ -59,7 +59,11 @@ public class MusicPlayer implements AudioEventListener, AudioSendHandler
                 log.trace("Starting Leave Thread");
                 Thread.sleep(sleepTime);
                 log.trace("Leaving VC");
-                Music.leave(manager);
+                MusicPlayer mp = (MusicPlayer) manager.getSendingHandler();
+                if(mp.player.isPaused())
+                {
+                    Music.leave(manager);
+                }
             }
             catch(InterruptedException err)
             {

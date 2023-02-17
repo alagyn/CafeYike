@@ -24,6 +24,10 @@
       <name>m2-dv8tion</name>
       <url>https://m2.dv8tion.net/releases</url>
     </repository>
+    <repository>
+		    <id>jitpack.io</id>
+		    <url>https://jitpack.io</url>
+		</repository>
   </repositories>
 
   <dependencies>
@@ -44,6 +48,12 @@
       <artifactId>lavaplayer</artifactId>
       <version>1.3.78</version>
     </dependency>
+
+    <dependency>
+	    <groupId>com.github.aikaterna</groupId>
+	    <artifactId>lavaplayer-natives</artifactId>
+	    <version>original-SNAPSHOT</version>
+	  </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc -->
     <dependency>

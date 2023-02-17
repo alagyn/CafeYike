@@ -83,7 +83,7 @@ public class Yike extends Cog
 
     public void yike(SlashCommandInteractionEvent event)
     {
-        InteractionHook hook = event.deferReply().complete();
+        InteractionHook hook = event.getHook();
         Member recip = event.getOption("user").getAsMember();
 
         if(recip == null)
@@ -132,7 +132,7 @@ public class Yike extends Cog
 
     public void unyike(SlashCommandInteractionEvent event)
     {
-        InteractionHook hook = event.deferReply(false).complete();
+        InteractionHook hook = event.getHook();
         Member recip = event.getOption("user").getAsMember();
 
         if(recip == null)
@@ -286,12 +286,12 @@ public class Yike extends Cog
 
         Guild serv = event.getGuild();
 
+        InteractionHook hook = event.getHook();
+
         if(serv == null)
         {
-            sendError(event, "Cannot get yikes outside a server");
+            sendError(hook, "Cannot get yikes outside a server");
         }
-
-        InteractionHook hook = event.deferReply().complete();
 
         if(user != null)
         {

@@ -169,8 +169,8 @@ public class Music extends Cog
         if(am.isConnected())
         {
             leave(am);
-            InteractionHook hook = event
-                    .replyEmbeds(new EmbedBuilder().setTitle("Music").setDescription("Goodbye").build()).complete();
+            InteractionHook hook = event.getHook();
+            hook.sendMessageEmbeds(new EmbedBuilder().setTitle("Music").setDescription("Goodbye").build()).complete();
             new DoAfter(60, x ->
             {
                 hook.deleteOriginal();
@@ -188,9 +188,11 @@ public class Music extends Cog
         Member u = event.getMember();
         Guild serv = event.getGuild();
 
+        InteractionHook hook = event.getHook();
+
         if(serv == null)
         {
-            sendError(event, "Not in a server");
+            sendError(hook, "Not in a server");
         }
 
         VoiceChannel voiceChannel = null;
@@ -207,12 +209,12 @@ public class Music extends Cog
 
         if(voiceChannel == null)
         {
-            sendError(event, "Not in a voice chat");
+            sendError(hook, "Not in a voice chat");
         }
 
         if(textChannel == null)
         {
-            sendError(event, "Invalid text channel");
+            sendError(hook, "Invalid text channel");
         }
 
         String query = event.getOption("query").getAsString();
@@ -221,10 +223,8 @@ public class Music extends Cog
         {
             // Empty query here is error
             // pause/resume/etc will be buttons
-            sendError(event, "Empty query");
+            sendError(hook, "Empty query");
         }
-
-        InteractionHook hook = event.deferReply().complete();
 
         Matcher matcher = URL_REGEX.matcher(query);
 

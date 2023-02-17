@@ -64,4 +64,5 @@ docker run \
     -p 8000:8000 \
     -e YM_SYS_CFG=/home/pi/system.conf \
     -e CafeYikeDB=/home/pi/dat/cafe.db \
+    -v $DB_DIR:/home/pi/dat/ \
     cafe-yike:1 $EXEC
