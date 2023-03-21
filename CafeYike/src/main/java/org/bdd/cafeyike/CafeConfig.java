@@ -36,8 +36,12 @@ public class CafeConfig implements TwigConfig
 
         String loglevel = getConfig("loglevel");
         Twig.setLevel(loglevel);
-        Twig.addBlock("com.sedmelluq");
-        Twig.addBlock("net.dv8");
+	String otherBlocks = getConfig("blockOtherLogs");
+	if(otherBlocks.equals("1"))
+	{
+	        Twig.addBlock("com.sedmelluq");
+	        Twig.addBlock("net.dv8");
+	}
         Twig.setNameMode(NameMode.ClassName);
         Twig.setNameAlign(NameAlign.Center);
     }
