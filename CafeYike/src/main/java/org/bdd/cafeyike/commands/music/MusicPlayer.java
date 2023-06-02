@@ -58,10 +58,10 @@ public class MusicPlayer implements AudioEventListener, AudioSendHandler
             {
                 log.trace("Starting Leave Thread");
                 Thread.sleep(sleepTime);
-                log.trace("Leaving VC");
                 MusicPlayer mp = (MusicPlayer) manager.getSendingHandler();
-                if(mp.player.isPaused())
+                if(mp.player.isPaused() || manager.getConnectedChannel().getMembers().size() == 1)
                 {
+                    log.trace("Leaving VC");
                     Music.leave(manager);
                 }
             }
@@ -198,9 +198,23 @@ public class MusicPlayer implements AudioEventListener, AudioSendHandler
 
         nowPlayingMsg.delete().queue();
 
+        StringBuilder queueMsg = new StringBuilder("```");
+        if(curIdx > 0)
+        {
+            queueMsg.append("   ").append(curIdx).append(" : ").append(trackQueue.get(curIdx - 1).getInfo().title)
+                    .append("\n");
+        }
+        queueMsg.append(" > ").append(curIdx + 1).append(" : ").append(currentTrack.getInfo().title).append("\n");
+        for(int i = curIdx + 1; i < Math.min(curIdx + 8, queueLen()); ++i)
+        {
+            queueMsg.append("   ").append(i + 1).append(" : ").append(trackQueue.get(i).getInfo().title).append("\n");
+        }
+        queueMsg.append("```");
+
         nowPlayingMsg = textChannel
                 .sendMessageEmbeds(
-                        new EmbedBuilder().setTitle(embedTitle()).setDescription(currentTrack.getInfo().title).build())
+                        new EmbedBuilder().setTitle(embedTitle()).setDescription(currentTrack.getInfo().title)
+                                .addField("Queue:", queueMsg.toString(), false).build())
                 .addComponents(getButtons()).complete();
     }
 
@@ -260,19 +274,33 @@ public class MusicPlayer implements AudioEventListener, AudioSendHandler
         }
     }
 
+    public void restartLeaveThread()
+    {
+        if(leaveThread != null)
+        {
+            log.trace("Restarting Leave Thread");
+            leaveThread.interrupt();
+            leaveThread = null;
+        }
+        startLeaveThread();
+    }
+
+    public void startLeaveThread()
+    {
+        if(leaveThread == null)
+        {
+            leaveThread = new Thread(new MusicPlayer.LeaveThread(leaveTimeMillis, manager));
+            leaveThread.start();
+        }
+    }
+
     /**
      * @param player Audio player
      */
     public void onPlayerPause(AudioPlayer player)
     {
         log.trace("Player paused");
-        if(leaveThread != null)
-        {
-            log.trace("Restarting Leave Thread");
-            leaveThread.interrupt();
-        }
-        leaveThread = new Thread(new MusicPlayer.LeaveThread(leaveTimeMillis, manager));
-        leaveThread.start();
+        restartLeaveThread();
     }
 
     /**

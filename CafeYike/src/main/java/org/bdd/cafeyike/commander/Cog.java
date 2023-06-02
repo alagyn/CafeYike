@@ -8,6 +8,7 @@ import org.bdd.cafeyike.commander.exceptions.UsageError;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
@@ -15,8 +16,10 @@ import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 /**
  * Contains one or more internal commands Used to group commands into a single
  * file
+ * 
+ * Extends listener Adapter so that the cog can register itself as an event listener is needed
  */
-public abstract class Cog
+public abstract class Cog extends ListenerAdapter
 {
     private LinkedList<Cmd> commands = new LinkedList<>();
     private LinkedList<Btn> butttons = new LinkedList<>();

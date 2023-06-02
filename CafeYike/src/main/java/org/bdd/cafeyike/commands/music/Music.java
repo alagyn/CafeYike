@@ -1,5 +1,6 @@
 package org.bdd.cafeyike.commands.music;
 
+import java.security.cert.PKIXRevocationChecker.Option;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -20,12 +21,15 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
+import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
+import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
@@ -114,7 +118,10 @@ public class Music extends Cog
 
     public static final String URL_RE_STR = "(?i)\\b((?:https?://|www\\d{0,3}[.]|[a-z0-9.\\-]+[.][a-z]{2,4}/)(?:[^\\s()<>]+|\\(([^\\s()<>]+|(\\([^\\s()<>]+\\)))*\\))+(?:\\(([^\\s()<>]+|(\\([^\\s()<>]+\\)))*\\)|[^\\s`!()\\[\\]{};:'\\\".,<>?«»“”‘’]))";
 
+    public static final String SEEK_RE_STR = "(?<delta>[+-])?((?<min>\\d*):(?<sec>\\d{2})|(?<allsec>\\d+))";
+
     public static final Pattern URL_REGEX = Pattern.compile(URL_RE_STR);
+    public static final Pattern SEEK_REGEX = Pattern.compile(SEEK_RE_STR);
 
     public Music(Bot bot)
     {
@@ -122,6 +129,45 @@ public class Music extends Cog
         leaveTimeMillis = CafeConfig.getIntConfig("musicLeaveTimeSec") * 1000;
         playerManager = new DefaultAudioPlayerManager();
         AudioSourceManagers.registerRemoteSources(playerManager);
+    }
+
+    @Override
+    public void onGuildVoiceUpdate(GuildVoiceUpdateEvent event)
+    {
+        AudioChannelUnion channel = event.getChannelLeft();
+        if(channel == null)
+        {
+            // User did not leave a channel, ignore
+            return;
+        }
+
+        Guild serv = event.getGuild();
+        AudioManager am = serv.getAudioManager();
+        if(!am.isConnected())
+        {
+            // Not connected to VC, ignore
+            return;
+        }
+
+        AudioChannelUnion playerChannel = am.getConnectedChannel();
+
+        if(playerChannel == null || !playerChannel.equals(channel))
+        {
+            // User left a different channel, ignore
+            return;
+        }
+
+        VoiceChannel vc = channel.asVoiceChannel();
+
+        if(vc.getMembers().size() != 1)
+        {
+            // There are other users in the VC, ignore
+            return;
+        }
+
+        MusicPlayer player = (MusicPlayer) am.getSendingHandler();
+        log.trace("Empty VC, starting leave thread");
+        player.startLeaveThread();
     }
 
     @Override
@@ -138,6 +184,15 @@ public class Music extends Cog
 
         registerCmdFunc(this::leaveCmd, "leave");
 
+        out.add(Commands.slash("time", "Get time info on the current playing track"));
+
+        registerCmdFunc(this::timeCmd, "time");
+
+        out.add(Commands.slash("seek", "Seek controls for the current track").addOption(OptionType.STRING, "time",
+                "Formats: [+/-][min:]sec. Using without the +/- seeks to the absolute time", true));
+
+        registerCmdFunc(this::seekCmd, "seek");
+
         registerBtnFunc(this::nextBtn, NEXT_BTN);
         registerBtnFunc(this::prevBtn, PREV_BTN);
         registerBtnFunc(this::playBtn, PLAY_BTN);
@@ -146,6 +201,12 @@ public class Music extends Cog
         registerBtnFunc(this::selectBtn, SELECT_BTN);
 
         return out;
+    }
+
+    @Override
+    public void registerListeners(JDA api)
+    {
+        api.addEventListener(this);
     }
 
     public static void leave(AudioManager am)
@@ -248,6 +309,11 @@ public class Music extends Cog
             MusicPlayer mp = new MusicPlayer(am, player, m, textChannel, serv.getIdLong(), leaveTimeMillis);
             am.setSendingHandler(mp);
             am.openAudioConnection(voiceChannel);
+        }
+        else if(!am.getConnectedChannel().asVoiceChannel().equals(voiceChannel))
+        {
+            // User is in a different VC
+            sendError(hook, "Not in the same voice channel as bot");
         }
 
         // This has to be final to store the up-value
@@ -378,6 +444,125 @@ public class Music extends Cog
         });
     }
 
+    private void timeCmd(SlashCommandInteractionEvent event)
+    {
+        Guild serv = event.getGuild();
+        AudioManager am = serv.getAudioManager();
+        InteractionHook hook = event.getHook();
+        if(!am.isConnected())
+        {
+            sendError(hook, "Bot not connected");
+        }
+
+        MusicPlayer player = (MusicPlayer) am.getSendingHandler();
+
+        StringBuilder msg = new StringBuilder("```\n");
+        AudioTrack track = player.player.getPlayingTrack();
+        msg.append(track.getInfo().title).append("\n");
+
+        // These are in ms, convert to s
+        long duration = track.getDuration() / 1000;
+        long pos = track.getPosition() / 1000;
+
+        long durMin = duration / 60;
+        long durSec = duration % 60;
+
+        long posMin = pos / 60;
+        long posSec = pos % 60;
+
+        msg.append(posMin).append(":").append(posSec).append("/").append(durMin).append(":").append(durSec)
+                .append("\n");
+
+        final long LINE_SIZE = 48;
+        float percent = (float) pos / duration;
+        int spot = (int) (percent * (float) LINE_SIZE);
+
+        msg.append("|");
+        for(int i = 0; i < LINE_SIZE; ++i)
+        {
+            if(i != spot)
+            {
+                msg.append("-");
+            }
+            else
+            {
+                msg.append("O");
+            }
+        }
+        msg.append("|");
+
+        msg.append("```");
+        hook.sendMessageEmbeds(new EmbedBuilder().setTitle("Time:").setDescription(msg.toString()).build()).queue();
+
+    }
+
+    private void seekCmd(SlashCommandInteractionEvent event)
+    {
+        Guild serv = event.getGuild();
+        AudioManager am = serv.getAudioManager();
+        InteractionHook hook = event.getHook();
+        if(!am.isConnected())
+        {
+            sendError(hook, "Bot not connected");
+        }
+
+        String query = event.getOption("time").getAsString();
+        Matcher matcher = SEEK_REGEX.matcher(query);
+
+        if(!matcher.matches())
+        {
+            sendError(hook, "Invalid time");
+        }
+
+        MusicPlayer player = (MusicPlayer) am.getSendingHandler();
+
+        String minuteStr = matcher.group("min");
+
+        long minutes = 0;
+        long secs = 0;
+        if(minuteStr != null)
+        {
+            minutes = Long.parseLong(minuteStr);
+            secs = Long.parseLong(matcher.group("sec"));
+        }
+        else
+        {
+            secs = Long.parseLong(matcher.group("allsec"));
+        }
+
+        long seekPos = (60 * minutes + secs) * 1000;
+
+        String delta = matcher.group("delta");
+        if(delta != null)
+        {
+            long curPos = player.player.getPlayingTrack().getPosition();
+            log.debug("CurPos {}", curPos);
+            if(delta.equals("+"))
+            {
+                seekPos = curPos + seekPos;
+            }
+            else
+            {
+                seekPos = curPos - seekPos;
+            }
+        }
+
+        seekPos = Math.max(0, seekPos);
+
+        player.player.getPlayingTrack().setPosition(seekPos);
+
+        long outMin = seekPos / 1000 / 60;
+        long outSec = seekPos / 1000 % 60;
+
+        StringBuilder msg = new StringBuilder("Seeked to ");
+        msg.append(outMin).append(":").append(outSec);
+
+        hook.sendMessageEmbeds(new EmbedBuilder().setTitle("Seek").setDescription(msg.toString()).build()).queue();
+    }
+
+    /*
+     * Get the player for an event, should only be used by buttons
+     */
     private MusicPlayer getPlayer(ButtonInteractionEvent event)
     {
         AudioManager am = event.getGuild().getAudioManager();

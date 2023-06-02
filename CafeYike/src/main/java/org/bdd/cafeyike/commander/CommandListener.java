@@ -176,7 +176,7 @@ public class CommandListener extends ListenerAdapter
 
             cog.registerListeners(api);
         }
-        api.updateCommands().addCommands(toRegister);
+        api.updateCommands().addCommands(toRegister).queue();
     }
 
 }

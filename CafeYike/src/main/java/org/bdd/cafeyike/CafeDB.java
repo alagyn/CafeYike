@@ -64,6 +64,12 @@ public class CafeDB
         File dbFile = new File(CafeConfig.getEnv("CafeYikeDB"));
         boolean needToInit = !dbFile.exists();
 
+        if(needToInit)
+        {
+            File directory = dbFile.getParentFile();
+            directory.mkdirs();
+        }
+
         try
         {
             SQLiteConfig sqlConfig = new SQLiteConfig();
