@@ -515,6 +515,10 @@ public class Music extends Cog
         }
 
         MusicPlayer player = (MusicPlayer) am.getSendingHandler();
+        if(!player.player.getPlayingTrack().isSeekable())
+        {
+            sendError(hook, "Track is not seekable");
+        }
 
         String minuteStr = matcher.group("min");
 
