@@ -33,7 +33,6 @@ import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
@@ -245,8 +244,8 @@ public class Quote extends Cog
                 .create("time", "New Timestamp: " + STR_DATE_FMT + " (24 hour clock)", TextInputStyle.SHORT)
                 .setRequired(false).build();
 
-        Modal modal = Modal.create(Bot.makeId(QUOTE_MODAL, quoteId), "Edit Quote")
-                .addActionRows(ActionRow.of(newQuote), ActionRow.of(newTs)).build();
+        Modal modal = Modal.create(Bot.makeId(QUOTE_MODAL, quoteId), "Edit Quote").addActionRow(newQuote)
+                .addActionRow(newTs).build();
 
         event.replyModal(modal).queue();
     }
@@ -260,6 +259,7 @@ public class Quote extends Cog
         String newTsString = event.getValue("time").getAsString();
 
         InteractionHook hook = event.getHook();
+        event.deferReply().complete();
 
         Timestamp newTs = null;
         if(!newTsString.isEmpty())

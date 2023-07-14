@@ -99,7 +99,7 @@ public class CafeDB
         GET_QUOTE_FOR_SERVER_ST = loadStatement("quotes/getQuotesForServer.sql");
         GET_QUOTE_FOR_USER_ST = loadStatement("quotes/getQuotesForUser.sql");
         GET_QUOTE_BY_ID_ST = loadStatement("quotes/getQuoteByID.sql");
-        EDIT_QUOTE_ST = loadStatement("quotes/editQuote.sql");
+        EDIT_QUOTE_ST = loadStatement("quotes/editQuoteContent.sql");
         EDIT_QUOTE_TS_ST = loadStatement("quotes/editQuoteTs.sql");
 
         // Init tables
@@ -386,7 +386,7 @@ public class CafeDB
 
                 s.setString(1, content);
                 s.setLong(2, quoteID);
-                s.executeUpdate();
+                s.execute();
             }
 
             if(ts != null)
@@ -394,7 +394,7 @@ public class CafeDB
                 PreparedStatement s = prepare(EDIT_QUOTE_TS_ST);
                 s.setTimestamp(1, ts);
                 s.setLong(2, quoteID);
-                s.executeUpdate();
+                s.execute();
             }
         }
         catch(SQLException e)
