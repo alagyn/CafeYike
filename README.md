@@ -1,4 +1,4 @@
-![YikeBotLogo](YikeManager/ym-frontend/public/YikeBotLogoMk2.ico)
+<img src="YikeManager/ym-frontend/public/YikeBotLogoMk2.ico" align="right"/>
 
 ---
 
