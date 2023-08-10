@@ -8,7 +8,6 @@ USER=root
 
 docker run \
     --rm \
-    -ti \
     --user $USER \
     --hostname cafe-yike \
     --workdir /home/$USER \
