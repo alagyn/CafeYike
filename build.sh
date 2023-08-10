@@ -119,9 +119,9 @@ gen_config()
 build_docker()
 {
     echo Building Container
+    export BUILDKIT_COLORS="run=cyan:error=yellow:cancel=blue:warning=white"
     cd ${home}/docker
-    docker build -t cafe-yike:1 . \
-        --build-arg baseOS=buster:1
+    docker build -t cafe-yike:1 .
 }
 
 BUILD_JAVA=1
@@ -129,8 +129,9 @@ BUILD_FE=1
 BUILD_BE=1
 RELEASE=0
 
-while getopts 'rjbfad' opt
+while getopts "rjbfad" opt
 do
+    echo "Option $opt"
     case $opt in
         # Build java
         j) 

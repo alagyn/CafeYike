@@ -1,3 +1,4 @@
 #!/bin/bash
 
-python3 -m yikemng
+# This var is set in .bashrc
+$PY -m yikemng

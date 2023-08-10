@@ -1,3 +1,3 @@
 #!/bin/bash
 
-java -cp /home/pi/@@CafeYikeJar org.bdd.cafeyike.CafeYike
+java -cp /home/root/@@CafeYikeJar org.bdd.cafeyike.CafeYike

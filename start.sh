@@ -2,25 +2,31 @@
 
 usage()
 {
-    echo start.sh -d DB_DIR [-u USER] [-j | -b]
+    echo "start.sh -d DB_DIR [-u USER] [-j | -b]"
+    echo "    -d : Set the database directory"
+    echo "    -u : Override the user"
+    echo "    -j : Run the bot only, without the manager"
+    echo "    -b : Start an interactive bash session"
+    echo "    Not specifying j or b will automatically run the manager"
     exit 0
 }
 
 home=$(realpath $(dirname $0))
 
 DB_DIR=$home/dat/
-USER=pi
+USER=root
 RUN_BASH=0
 RUN_JAVA=0
 
 
-while getopts "bd:u:j" opt
+while getopts "bd:u:jh" opt
 do
     case $opt in
         b) RUN_BASH=1 ;;
         d) DB_DIR=$OPTARG ;;
         u) USER=$OPTARG ;;
         j) RUN_JAVA=1 ;;
+        h) usage ;;
         *) usage ;;
     esac
 done
@@ -50,9 +56,9 @@ then
     EXEC=/bin/bash
 elif [ $RUN_JAVA = 1 ]
 then
-    EXEC=/home/pi/start_java.sh
+    EXEC=/home/$USER/start_java.sh
 else
-    EXEC=/home/pi/start_manager.sh
+    EXEC=/home/$USER/start_manager.sh
 fi
 
 docker run \
@@ -60,9 +66,9 @@ docker run \
     -ti \
     --user $USER \
     --hostname cafe-yike \
-    --workdir /home/pi \
+    --workdir /home/$USER \
     -p 8000:8000 \
-    -e YM_SYS_CFG=/home/pi/system.conf \
-    -e CafeYikeDB=/home/pi/dat/cafe.db \
-    -v $DB_DIR:/home/pi/dat/ \
+    -e YM_SYS_CFG=/home/$USER/system.conf \
+    -e CafeYikeDB=/home/$USER/dat/cafe.db \
+    -v $DB_DIR:/home/$USER/dat/ \
     cafe-yike:1 $EXEC
