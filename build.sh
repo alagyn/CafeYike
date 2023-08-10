@@ -131,7 +131,6 @@ RELEASE=0
 
 while getopts "rjbfad" opt
 do
-    echo "Option $opt"
     case $opt in
         # Build java
         j) 
