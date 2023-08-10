@@ -76,7 +76,7 @@ gen_config()
     then
         echo Using LIVE token
         token_file=${home}/token.txt
-        loglevel=Info
+        loglevel=Debug
     else
         echo Using TEST token
         token_file=${home}/test-token.txt
