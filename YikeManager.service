@@ -9,5 +9,6 @@ Restart=always
 RestartSec=1
 User=cafeyike
 ExecStart=/home/cafeyike/CafeYike/start.sh
+ExecStop=docker stop yike-manager
 StandardOutput=file:/home/cafeyike/service.log
 StandardError=inherit
