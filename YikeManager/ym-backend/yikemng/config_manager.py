@@ -11,7 +11,7 @@ _configs = {}
 if not os.path.exists(_CONFIG):
     print(f"Cannot find system config: \"{os.path.abspath(_CONFIG)}\".")
     print("Set YM_SYS_CFG env var")
-    exit(0)
+    exit(1)
 
 print("Loading Configs")
 with open(_CONFIG, mode='r') as f:
@@ -22,10 +22,10 @@ with open(_CONFIG, mode='r') as f:
         key, val = line.split('=')
         _configs[key.strip()] = val.strip()
 
-class YMConfig:
-    configFile = _CONFIG
-    tempDir = _configs['TempDir']
-    maxLogLines = int(_configs['MaxLogLines'])
-    
-    botFile = os.environ['CafeYikeJar']
-    frontendDir = os.environ['FrontendDir']
+
+configFile = _CONFIG
+tempDir = _configs['TempDir']
+maxLogLines = int(_configs['MaxLogLines'])
+
+botFile = os.environ['CafeYikeJar']
+frontendDir = os.environ['FrontendDir']

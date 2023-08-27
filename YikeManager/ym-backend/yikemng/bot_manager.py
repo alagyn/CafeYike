@@ -11,7 +11,7 @@ import os
 from pydantic import BaseModel
 
 from yikemng.errors import YMError
-from yikemng.config_manager import YMConfig
+import yikemng.config_manager as YMConfig
 
 class BotStatus(str, Enum):
     """

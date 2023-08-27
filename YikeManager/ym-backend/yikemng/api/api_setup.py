@@ -12,7 +12,7 @@ mimetypes.add_type('text/javascript', '.js', True)
 
 import yikemng.api.admin as admin
 import yikemng.api.bot_control as bot_control
-from yikemng.config_manager import YMConfig
+import yikemng.config_manager as YMConfig
 
 app = FastAPI()
 

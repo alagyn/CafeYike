@@ -7,7 +7,7 @@ from fastapi import Response, status, HTTPException, APIRouter
 from pydantic import BaseModel
 
 from yikemng.bot_manager import BotStatusPackage, manager
-from yikemng.config_manager import YMConfig
+from yikemng.config_manager import botFile
 
 class BotCmd(Enum):
     START = 'start'
@@ -59,4 +59,4 @@ async def bot_logs(response: Response, force: bool = False, lastLine: int = 0) -
 
 @router.get("/exec", status_code=200)
 async def get_bot_exec() -> str:
-    return os.path.split(YMConfig.botFile)[1]
+    return os.path.split(botFile)[1]
