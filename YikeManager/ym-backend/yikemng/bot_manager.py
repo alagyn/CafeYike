@@ -39,6 +39,8 @@ class _BotManager:
         self.log_thr: Optional[thr.Thread] = None
         self.log_num: int = 0
 
+        self.startup()
+
     def startup(self):
         if self.status != BotStatus.OFFLINE:
             raise YMError("BotManager.startup: Cannot Start bot, bot is not offline")

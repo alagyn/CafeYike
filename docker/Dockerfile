@@ -2,8 +2,11 @@ FROM debian:bookworm-slim
 
 USER root
 
+ENV USER=cafeyike
+# Home dir
+ENV HOME=/home/$USER
 # Virtual env location
-ENV VENV=/home/root/venv
+ENV VENV=$HOME/venv
 # venv python exec
 ENV PY=${VENV}/bin/python3
 
@@ -12,35 +15,37 @@ RUN apt-get update && \
     apt-get install -y python3-pip python3-venv openjdk-17-jre-headless && \
     apt-get clean
 
+RUN adduser --system $USER --home $HOME
+
+USER $USER
+
 # Store the venv location
-RUN mkdir /home/root && echo "export PY=$PY" > /home/root/.bashrc
+ADD .bashrc $HOME/.bashrc
 
 # Add python reqs
-ADD build/requirements.txt /home/root/setup/
+ADD build/requirements.txt $HOME/setup/
 # Install py dependencies
 RUN python3 -m venv $VENV && \
     $PY -m pip install --upgrade pip && \
     $PY -m pip install setuptools wheel && \
-    $PY -m pip install -r /home/root/setup/requirements.txt
+    $PY -m pip install -r $HOME/setup/requirements.txt
 
 # Create dirs with the corrent permissions
-RUN mkdir /home/root/dat
+RUN mkdir $HOME/dat
 
 # Add start scripts
-ADD --chown=root build/start_java.sh /home/root/
-ADD --chown=root start_manager.sh /home/root/
-RUN chmod +x /home/root/*.sh
+ADD --chown=$USER build/start_java.sh $HOME/
+ADD --chown=$USER start_manager.sh $HOME/
+RUN chmod +x $HOME/*.sh
 # Add frontend
-COPY --chown=root build/ym-frontend/ /home/root/frontend/
+COPY --chown=$USER build/ym-frontend/ $HOME/frontend/
 # Add python reqs
-ADD --chown=root build/requirements.txt /home/root/setup/
+ADD --chown=$USER build/requirements.txt $HOME/setup/
 # Add yikemng
-ADD --chown=root build/yikemng-1.0.0-py3-none-any.whl /home/root/setup/
+ADD --chown=$USER build/yikemng-1.0.0-py3-none-any.whl $HOME/setup/
 # Add CafeYike
-ADD --chown=root build/CafeYike*.jar /home/root/
-# Add system.conf
-ADD --chown=root build/system.conf /home/root/
+ADD --chown=$USER build/CafeYike*.jar $HOME/
 
 # Install yikemng
-RUN $PY -m pip install /home/root/setup/yikemng-1.0.0-py3-none-any.whl
+RUN $PY -m pip install $HOME/setup/yikemng-1.0.0-py3-none-any.whl
 

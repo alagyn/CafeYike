@@ -14,12 +14,11 @@ usage()
 home=$(realpath $(dirname $0))
 
 DB_DIR=$home/dat/
-USER=root
 RUN_BASH=0
 RUN_JAVA=0
 
 
-while getopts "bd:u:jh" opt
+while getopts "bd:jh" opt
 do
     case $opt in
         b) RUN_BASH=1 ;;
@@ -72,7 +71,5 @@ docker run \
     --workdir /home/$USER \
     -p 8000:8000 \
     --name yike-manager \
-    -e YM_SYS_CFG=/home/$USER/system.conf \
-    -e CafeYikeDB=/home/$USER/dat/cafe.db \
     -v $DB_DIR:/home/$USER/dat/ \
     cafe-yike:1 $EXEC
