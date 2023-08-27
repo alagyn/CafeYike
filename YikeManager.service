@@ -12,3 +12,6 @@ ExecStart=/home/cafeyike/CafeYike/start.sh
 ExecStop=docker stop yike-manager
 StandardOutput=file:/home/cafeyike/service.log
 StandardError=inherit
+
+[Install]
+WantedBy=multi-user.target
