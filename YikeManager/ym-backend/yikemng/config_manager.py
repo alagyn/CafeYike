@@ -25,7 +25,6 @@ with open(_CONFIG, mode='r') as f:
 class YMConfig:
     configFile = _CONFIG
     botFile = _configs['CafeYikeJar']
-    dbFile = _configs['CafeYikeDB']
     tempDir = _configs['TempDir']
     maxLogLines = int(_configs['MaxLogLines'])
     frontendDir = _configs['FrontendDir']

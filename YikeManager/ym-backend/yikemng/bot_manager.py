@@ -50,9 +50,6 @@ class _BotManager:
 
         env = os.environ.copy()
 
-        env["YM_SYS_CFG"] = os.path.abspath(YMConfig.configFile)
-        env['CafeYikeDB'] = os.path.abspath(YMConfig.dbFile)
-
         self.bot_startTime = time.time()
         self.bot_proc = sp.Popen(
             ["java", '-Djava.io.tmpdir=temp', "-cp", YMConfig.botFile, 'org.bdd.cafeyike.CafeYike'],
