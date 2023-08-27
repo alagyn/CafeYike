@@ -51,9 +51,12 @@ then
     exit 0
 fi
 
+EXTRA_ARGS=
+
 if [ $RUN_BASH = 1 ]
 then
     EXEC=/bin/bash
+    EXTRA_ARGS=-ti
 elif [ $RUN_JAVA = 1 ]
 then
     EXEC=/home/$USER/start_java.sh
@@ -63,7 +66,7 @@ fi
 
 docker run \
     --rm \
-    -ti \
+    $EXTRA_ARGS \
     --user $USER \
     --hostname cafe-yike \
     --workdir /home/$USER \
