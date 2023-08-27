@@ -4,7 +4,8 @@ import os
 try:
     _CONFIG = os.environ["YM_SYS_CFG"]
 except KeyError:
-    _CONFIG = 'system.cfg'
+    print("Set YM_SYS_CFG env var")
+    exit(1)
 
 _configs = {}
 

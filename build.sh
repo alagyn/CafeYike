@@ -3,6 +3,8 @@ set -e
 # Get location of script
 home=$(realpath $(dirname $0))
 
+DOCKER_VERSION=`cat $home/DOCKER_VERSION`
+
 BUILD_DIR=${home}/docker/build
 
 mkdir -p $BUILD_DIR
@@ -72,29 +74,6 @@ build_frontend()
 gen_config()
 {
     echo Generating Config
-    if [ $RELEASE = 1 ]
-    then
-        echo Using LIVE token
-        token_file=${home}/token.txt
-        loglevel=Debug
-    else
-        echo Using TEST token
-        token_file=${home}/test-token.txt
-        loglevel=Debug
-    fi
-
-    if [ -f $token_file ]
-    then
-        TOKEN=`cat ${token_file}`
-    else
-        TOKEN=""
-    fi
-    
-    if [ -z "${TOKEN}" ]
-    then
-        echo Token not found, please create ${token_file}
-        exit 1
-    fi
 
     if [ -z "${YIKE_EXEC}" ]
     then
@@ -103,30 +82,24 @@ gen_config()
     fi
 
     sed \
-        -e "s/@@token/${TOKEN}/" \
-        -e "s/@@loglevel/${loglevel}/" \
-        ${home}/docker/system_template.conf \
-        > ${BUILD_DIR}/system.conf
+        -e "s/@@yikeJar/$YIKE_EXEC/" \
+        ${home}/docker/bashrc_template.sh \
+        > ${BUILD_DIR}/.bashrc
 
-    sed \
-        -e "s/@@CafeYikeJar/${YIKE_EXEC}/" \
-        ${home}/docker/start_java.sh \
-        > ${BUILD_DIR}/start_java.sh
 }
 
 # Build the docker container
 build_docker()
 {
-    echo Building Container
+    echo Building Container version $DOCKER_VERSION
     export BUILDKIT_COLORS="run=cyan:error=yellow:cancel=blue:warning=white"
     cd ${home}/docker
-    docker build --build-arg YIKE_JAR=$YIKE_EXEC -t cafe-yike:2 .
+    docker build -t cafe-yike:$DOCKER_VERSION .
 }
 
 BUILD_JAVA=1
 BUILD_FE=1
 BUILD_BE=1
-RELEASE=0
 
 while getopts "rjbfad" opt
 do
@@ -148,10 +121,6 @@ do
             BUILD_FE=1
             BUILD_JAVA=0
             BUILD_BE=0
-        ;;
-        # Build release mode
-        r)
-            RELEASE=1
         ;;
         # Docker only
         d)

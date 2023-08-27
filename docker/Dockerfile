@@ -9,7 +9,6 @@ ENV HOME=/home/$USER
 ENV VENV=$HOME/venv
 # venv python exec
 ENV PY=${VENV}/bin/python3
-ARG YIKE_JAR
 
 RUN apt-get update && \
     apt-get install -y ca-certificates-java && \
@@ -21,11 +20,10 @@ RUN adduser --system $USER --home $HOME
 USER $USER
 
 # Store the venv location
-ADD .bashrc $HOME/.bashrc
-RUN echo "export CafeYikeJar=$YIKE_JAR" >> $HOME/.bashrc
+ADD --chown=$USER build/./st.bashrc $HOME/.bashrc
 
 # Add python reqs
-ADD build/requirements.txt $HOME/setup/
+ADD --chown=$USER build/requirements.txt $HOME/setup/
 # Install py dependencies
 RUN python3 -m venv $VENV && \
     $PY -m pip install --upgrade pip && \
@@ -36,8 +34,7 @@ RUN python3 -m venv $VENV && \
 RUN mkdir $HOME/dat
 
 # Add start scripts
-ADD --chown=$USER build/start_java.sh $HOME/
-ADD --chown=$USER start_manager.sh $HOME/
+ADD --chown=$USER *.sh $HOME/
 RUN chmod +x $HOME/*.sh
 # Add frontend
 COPY --chown=$USER build/ym-frontend/ $HOME/frontend/

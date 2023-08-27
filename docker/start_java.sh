@@ -1,3 +1,5 @@
 #!/bin/bash
 
-java -cp /home/root/@@CafeYikeJar org.bdd.cafeyike.CafeYike
+source ~/.bashrc
+
+java -cp $CafeYikeJar org.bdd.cafeyike.CafeYike

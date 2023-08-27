@@ -2,6 +2,8 @@
 
 home=$(realpath $(dirname $0))
 
+VERSION=`cat $home/DOCKER_VERSION`
+
 usage()
 {
     echo "Usage: start-detached.sh [database-dir]"
@@ -21,14 +23,12 @@ then
     usage
 fi
 
-USER=root
-
 docker run \
     --rm \
-    --user $USER \
+    --user cafeyike \
     --hostname cafe-yike \
-    --workdir /home/$USER \
+    --workdir /home/cafeyike \
     --name yike-manager \
     -p 8000:8000 \
-    -v $DB_DIR:/home/$USER/dat/ \
-    cafe-yike:1 "/home/$USER/start_manager.sh" > manager.log 2>&1 &
+    -v $DB_DIR:/home/cafeyike/dat/ \
+    cafe-yike:$VERSION "/home/cafeyike/start_manager.sh" > manager.log 2>&1 &
