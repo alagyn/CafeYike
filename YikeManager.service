@@ -1,0 +1,11 @@
+[Unit]
+Description=YikeManager Service
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=cafeyike
+ExecStart=/home/cafeyike/CafeYike/start.sh
