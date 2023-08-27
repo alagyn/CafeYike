@@ -71,7 +71,7 @@ docker run \
     --hostname cafe-yike \
     --workdir /home/$USER \
     -p 8000:8000 \
-    --name yike-manger
+    --name yike-manger \
     -e YM_SYS_CFG=/home/$USER/system.conf \
     -e CafeYikeDB=/home/$USER/dat/cafe.db \
     -v $DB_DIR:/home/$USER/dat/ \
