@@ -9,3 +9,5 @@ Restart=always
 RestartSec=1
 User=cafeyike
 ExecStart=/home/cafeyike/CafeYike/start.sh
+StandardOutput=file:/home/cafeyike/service.log
+StandardError=inherit
