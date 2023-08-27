@@ -104,7 +104,6 @@ gen_config()
 
     sed \
         -e "s/@@token/${TOKEN}/" \
-        -e "s/@@CafeYikeJar/${YIKE_EXEC}/" \
         -e "s/@@loglevel/${loglevel}/" \
         ${home}/docker/system_template.conf \
         > ${BUILD_DIR}/system.conf
@@ -121,7 +120,7 @@ build_docker()
     echo Building Container
     export BUILDKIT_COLORS="run=cyan:error=yellow:cancel=blue:warning=white"
     cd ${home}/docker
-    docker build -t cafe-yike:1 .
+    docker build --build-arg YIKE_JAR=$YIKE_EXEC -t cafe-yike:2 .
 }
 
 BUILD_JAVA=1

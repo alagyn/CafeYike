@@ -9,6 +9,7 @@ ENV HOME=/home/$USER
 ENV VENV=$HOME/venv
 # venv python exec
 ENV PY=${VENV}/bin/python3
+ARG YIKE_JAR
 
 RUN apt-get update && \
     apt-get install -y ca-certificates-java && \
@@ -21,6 +22,7 @@ USER $USER
 
 # Store the venv location
 ADD .bashrc $HOME/.bashrc
+RUN echo "export CafeYikeJar=$YIKE_JAR" >> $HOME/.bashrc
 
 # Add python reqs
 ADD build/requirements.txt $HOME/setup/
