@@ -2,6 +2,8 @@ FROM debian:bookworm-slim
 
 USER root
 
+ARG UID
+
 ENV USER=cafeyike
 # Home dir
 ENV HOME=/home/$USER
@@ -15,12 +17,12 @@ RUN apt-get update && \
     apt-get install -y python3-pip python3-venv openjdk-17-jre-headless && \
     apt-get clean
 
-RUN adduser --system $USER --home $HOME
+RUN adduser --system $USER --home $HOME --uid $UID
 
 USER $USER
 
 # Store the venv location
-ADD --chown=$USER build/./st.bashrc $HOME/.bashrc
+ADD --chown=$USER build/.bashrc $HOME/.bashrc
 
 # Add python reqs
 ADD --chown=$USER build/requirements.txt $HOME/setup/

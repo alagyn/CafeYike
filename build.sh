@@ -94,7 +94,12 @@ build_docker()
     echo Building Container version $DOCKER_VERSION
     export BUILDKIT_COLORS="run=cyan:error=yellow:cancel=blue:warning=white"
     cd ${home}/docker
-    docker build -t cafe-yike:$DOCKER_VERSION .
+
+    CY_UID=`id -u cafeyike`
+
+    docker build \
+        --build-arg UID=$CY_UID \
+        -t cafe-yike:$DOCKER_VERSION .
 }
 
 BUILD_JAVA=1
