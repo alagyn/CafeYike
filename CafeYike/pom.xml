@@ -54,7 +54,6 @@
 	    <version>1.0.5</version>
 	</dependency>
 
-    -->
     <dependency>
       <groupId>dev.arbjerg</groupId>
       <artifactId>lavaplayer</artifactId>
