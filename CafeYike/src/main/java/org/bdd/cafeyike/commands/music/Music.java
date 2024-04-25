@@ -19,7 +19,7 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-
+import dev.lavalink.youtube.YoutubeAudioSourceManager;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
@@ -106,6 +106,7 @@ public class Music extends Cog
     private HashMap<Long, QueryResult> queryMap = new HashMap<>();
 
     private AudioPlayerManager playerManager;
+    private YoutubeAudioSourceManager ytManager;
     public final int leaveTimeMillis;
 
     public static final String PREV_BTN = "prev";
@@ -127,6 +128,8 @@ public class Music extends Cog
         super(bot);
         leaveTimeMillis = CafeConfig.getIntConfig("musicLeaveTimeSec") * 1000;
         playerManager = new DefaultAudioPlayerManager();
+        ytManager = new YoutubeAudioSourceManager();
+        playerManager.registerSourceManager(ytManager);
         AudioSourceManagers.registerRemoteSources(playerManager);
     }
 

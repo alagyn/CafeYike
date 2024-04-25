@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 # Get location of script
 home=$(realpath $(dirname $0))
 
@@ -9,17 +8,25 @@ BUILD_DIR=${home}/docker/build
 
 mkdir -p $BUILD_DIR
 
+echo "Building YikeBot"
+
 usage()
 {
-    exit 0
+    echo "Usage TODO lol"
+    exit 1
 }
 
 # Build CafeYike Java
 build_java()
 {
     cd ${home}/CafeYike
-
     YIKE_VERS=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout`
+    if [[ $? != 0 ]]
+    then
+        echo "Error getting version"
+        echo $YIKE_VERS
+        exit 1
+    fi
     YIKE_EXEC=CafeYike-${YIKE_VERS}.jar
     echo Building ${YIKE_EXEC}
 
@@ -106,35 +113,43 @@ BUILD_JAVA=1
 BUILD_FE=1
 BUILD_BE=1
 
+echo "Parsing cmd line"
+
 while getopts "rjbfad" opt
 do
     case $opt in
         # Build java
         j) 
+            echo "Building Java only"
             BUILD_JAVA=1
             BUILD_FE=0
             BUILD_BE=0
         ;;
         # Build backend
         b)
+            echo "Building Backend only"
             BUILD_BE=1
             BUILD_JAVA=0
             BUILD_FE=0
         ;;
         # Build frontend
         f) 
+            echo "Building Frontend only"
             BUILD_FE=1
             BUILD_JAVA=0
             BUILD_BE=0
         ;;
         # Docker only
         d)
+            echo "Building container only"
             BUILD_JAVA=0
             BUILD_BE=0
             BUILD_FE=0
         ;;
         # Unknown option
-        *) usage ;;
+        *) 
+            echo "Unknown option $opt"
+            usage ;;
     esac
 done
 
