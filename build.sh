@@ -1,5 +1,7 @@
 #!/bin/bash
 # Get location of script
+set -e
+
 home=$(realpath $(dirname $0))
 
 DOCKER_VERSION=`cat $home/DOCKER_VERSION`
@@ -30,7 +32,7 @@ build_java()
     YIKE_EXEC=CafeYike-${YIKE_VERS}.jar
     echo Building ${YIKE_EXEC}
 
-    mvn assembly:assembly --quiet
+    mvn assembly:assembly --quiet -U
     cp target/CafeYike-${YIKE_VERS}-jar-with-dependencies.jar ${BUILD_DIR}/${YIKE_EXEC}
 
 }
