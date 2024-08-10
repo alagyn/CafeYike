@@ -14,7 +14,13 @@ echo "Building YikeBot"
 
 usage()
 {
-    echo "Usage TODO lol"
+    echo "Usage: build.sh [options]"
+    echo "Build components and rebuild container"
+    echo "  [none]: Build everything"
+    echo "  -j: Build java"
+    echo "  -b: Build backend"
+    echo "  -f: Build frontend"
+    echo "  -d: Build container"
     exit 1
 }
 
