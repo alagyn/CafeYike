@@ -10,10 +10,19 @@ plugins {
     id 'application'
 }
 
+version '1.6'
+
 repositories {
     // Use Maven Central for resolving dependencies.
     mavenCentral()
     maven { url 'https://jitpack.io' }
+    maven { url 'https://maven.lavalink.dev/releases' }
+
+    mavenLocal {
+        content {
+            includeGroup 'org.bdd'
+        }
+    }
 }
 
 dependencies {
@@ -25,8 +34,11 @@ dependencies {
     // This dependency is used by the application.
     implementation libs.guava
 
+    implementation 'net.dv8tion:JDA:5.0.2'
     implementation 'dev.arbjerg:lavaplayer:2.2.1'
-    implementation 'com.github.lavalink-devs:youtube-source:1.5.2'
+    implementation 'dev.lavalink.youtube:v2:1.5.2'
+    implementation 'org.xerial:sqlite-jdbc:3.46.0.1'
+    implementation 'org.bdd:twig:1.0.4'
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
@@ -38,10 +50,21 @@ java {
 
 application {
     // Define the main class for the application.
-    mainClass = 'org.example.App'
+    mainClass = 'org.bdd.CafeYike'
 }
 
-tasks.named('test') {
-    // Use JUnit Platform for unit tests.
-    useJUnitPlatform()
+task fatJar(type: Jar)
+{
+    manifest {
+        attributes 'Main-Class': 'org.bdd.CafeYike'
+    }
+    archiveBaseName = 'CafeYike'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
 }
+
+task printVersion {
+  println project.version
+}
+

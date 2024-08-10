@@ -22,19 +22,12 @@ usage()
 build_java()
 {
     cd ${home}/CafeYike
-    YIKE_VERS=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout`
-    if [[ $? != 0 ]]
-    then
-        echo "Error getting version"
-        echo $YIKE_VERS
-        exit 1
-    fi
-    YIKE_EXEC=CafeYike-${YIKE_VERS}.jar
-    echo Building ${YIKE_EXEC}
+    YIKE_VERS=`./gradlew printVersion -q`
+    YIKE_EXEC=CafeYike-$YIKE_VERS.jar
+    echo Building $YIKE_EXEC
+    ./gradlew fatJar
 
-    mvn assembly:assembly --quiet -U
-    cp target/CafeYike-${YIKE_VERS}-jar-with-dependencies.jar ${BUILD_DIR}/${YIKE_EXEC}
-
+    cp app/build/libs/$YIKE_EXEC ${BUILD_DIR}/
 }
 
 use_old_java()
