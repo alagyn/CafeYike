@@ -35,8 +35,8 @@ dependencies {
     implementation libs.guava
 
     implementation 'net.dv8tion:JDA:5.0.2'
-    implementation 'dev.arbjerg:lavaplayer:2.2.1'
-    implementation 'dev.lavalink.youtube:v2:1.5.2'
+    implementation 'dev.arbjerg:lavaplayer:2.2.3'
+    implementation 'dev.lavalink.youtube:v2:1.13.2'
     implementation 'org.xerial:sqlite-jdbc:3.46.0.1'
     implementation 'org.bdd:twig:1.0.4'
 }
