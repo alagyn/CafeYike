@@ -10,7 +10,7 @@ plugins {
     id 'application'
 }
 
-version '1.6'
+version '1.7'
 
 repositories {
     // Use Maven Central for resolving dependencies.
@@ -34,9 +34,9 @@ dependencies {
     // This dependency is used by the application.
     implementation libs.guava
 
-    implementation 'net.dv8tion:JDA:5.0.2'
-    implementation 'dev.arbjerg:lavaplayer:2.2.3'
-    implementation 'dev.lavalink.youtube:v2:1.13.2'
+    implementation 'net.dv8tion:JDA:5.6.1'
+    implementation 'dev.arbjerg:lavaplayer:2.2.4'
+    implementation 'dev.lavalink.youtube:v2:1.15.0'
     implementation 'org.xerial:sqlite-jdbc:3.46.0.1'
     implementation 'org.bdd:twig:1.0.4'
 }
