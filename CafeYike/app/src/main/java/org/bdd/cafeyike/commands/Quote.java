@@ -33,10 +33,16 @@ import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import net.dv8tion.jda.api.interactions.components.text.TextInput;
-import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
-import net.dv8tion.jda.api.interactions.modals.Modal;
+import net.dv8tion.jda.api.components.actionrow.ActionRow;
+import net.dv8tion.jda.api.components.buttons.Button;
+import net.dv8tion.jda.api.components.container.Container;
+import net.dv8tion.jda.api.components.textinput.TextInput;
+import net.dv8tion.jda.api.components.textinput.TextInputStyle;
+import net.dv8tion.jda.api.modals.Modal;
+import net.dv8tion.jda.api.components.label.Label;
+import net.dv8tion.jda.api.components.separator.Separator;
+import net.dv8tion.jda.api.components.separator.Separator.Spacing;
+import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
 import net.dv8tion.jda.api.utils.FileUpload;
 
 public class Quote extends Cog
@@ -105,14 +111,19 @@ public class Quote extends Cog
 
         final long quoteId = _quoteId;
 
-        EmbedBuilder b = new EmbedBuilder().addField("Quote: " + user.getEffectiveName(), content, false)
-                .setFooter("10min to edit");
-        Message m = hook.sendMessageEmbeds(b.build()).addActionRow(getEditBtn(quoteId)).complete();
+        ActionRow actions = ActionRow.of(getEditBtn(quoteId));
+
+        Container container = Container.of(TextDisplay.of("### Quote: " + user.getEffectiveName()),
+                TextDisplay.of(content), Separator.createDivider(Spacing.SMALL), TextDisplay.of("10min to edit"),
+                actions);
+
+        Message m = hook.sendMessageComponents(container).useComponentsV2().complete();
         editMessages.put(quoteId, m);
         new DoAfter(quoteEditTimeSec, x ->
         {
-            b.setFooter("Quote Locked");
-            m.editMessageComponents(new ArrayList<>()).setEmbeds(b.build()).queue();
+            Container _container = Container.of(TextDisplay.of("### Quote: " + user.getEffectiveName()),
+                    TextDisplay.of(content), Separator.createDivider(Spacing.SMALL), TextDisplay.of("Quote Locked"));
+            m.editMessageComponents(_container).useComponentsV2().queue();
             editMessages.remove(quoteId);
         });
     }
@@ -238,14 +249,14 @@ public class Quote extends Cog
     {
         Long quoteId = Long.parseLong(data);
 
-        TextInput newQuote = TextInput.create("newQuote", "New Quote", TextInputStyle.SHORT).build();
+        TextInput newQuote = TextInput.create("newQuote", TextInputStyle.SHORT).build();
 
-        TextInput newTs = TextInput
-                .create("time", "New Timestamp: " + STR_DATE_FMT + " (24 hour clock)", TextInputStyle.SHORT)
-                .setRequired(false).build();
+        TextInput newTs = TextInput.create("time", TextInputStyle.SHORT).setRequired(false).build();
 
-        Modal modal = Modal.create(Bot.makeId(QUOTE_MODAL, quoteId), "Edit Quote").addActionRow(newQuote)
-                .addActionRow(newTs).build();
+        Modal modal = Modal.create(Bot.makeId(QUOTE_MODAL, quoteId), "Edit Quote")
+                .addComponents(Label.of("New Quote", newQuote),
+                        Label.of("New Timestamp: " + STR_DATE_FMT + " (24 hour clock)", newTs))
+                .build();
 
         event.replyModal(modal).queue();
     }

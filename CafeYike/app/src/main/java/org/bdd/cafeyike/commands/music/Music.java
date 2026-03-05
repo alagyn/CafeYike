@@ -1,5 +1,6 @@
 package org.bdd.cafeyike.commands.music;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -35,8 +36,8 @@ import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.components.actionrow.ActionRow;
+import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.managers.AudioManager;
 
 import org.slf4j.Logger;
@@ -377,8 +378,7 @@ public class Music extends Cog
                 StringBuilder text = new StringBuilder();
                 int numResults = playlist.getTracks().size();
                 int limit = numResults < 5 ? numResults : 5;
-
-                Button[] btns = new Button[limit];
+                ArrayList<Button> btns = new ArrayList<>(limit);
 
                 for(int i = 0; i < limit; ++i)
                 {
@@ -387,7 +387,7 @@ public class Music extends Cog
 
                     StringBuilder idBuilder = new StringBuilder();
                     idBuilder.append(SELECT_BTN).append(":").append(guildID).append(":").append(i);
-                    btns[i] = (Button.primary(idBuilder.toString(), "" + (i + 1)));
+                    btns.set(i, Button.primary(idBuilder.toString(), "" + (i + 1)));
                 }
 
                 Message selectMessage = hook

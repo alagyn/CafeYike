@@ -1,4 +1,4 @@
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
 USER root
 
@@ -14,7 +14,7 @@ ENV PY=${VENV}/bin/python3
 
 RUN apt-get update && \
     apt-get install -y ca-certificates-java && \
-    apt-get install -y python3-pip python3-venv openjdk-17-jre-headless && \
+    apt-get install -y python3-pip python3-venv openjdk-25-jre-headless && \
     apt-get clean
 
 RUN adduser --system $USER --home $HOME --uid $UID

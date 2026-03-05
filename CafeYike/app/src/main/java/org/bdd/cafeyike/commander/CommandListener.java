@@ -101,7 +101,7 @@ public class CommandListener extends ListenerAdapter
     public void onButtonInteraction(ButtonInteractionEvent event)
     {
         // Limit to one split, i.e. 2 sections
-        String[] data = event.getButton().getId().split(":", 2);
+        String[] data = event.getButton().getCustomId().split(":", 2);
         log.debug("runButton() Got btn: {}", data[0]);
 
         Btn b = buttons.get(data[0]);

@@ -12,10 +12,10 @@ usage()
     exit 0
 }
 
-home=$(realpath $(dirname $0))
-VERSION=`cat $home/DOCKER_VERSION`
+SCRIPT_DIR=$(realpath $(dirname $0))
+VERSION=`cat $SCRIPT_DIR/DOCKER_VERSION`
 
-DB_DIR=$home/dat/
+DB_DIR=$SCRIPT_DIR/dat/
 RUN_BASH=0
 RUN_JAVA=0
 MAKE_TTY=0
@@ -73,13 +73,16 @@ then
     EXTRA_ARGS=-ti
 fi
 
+_UID=`id -u`
+_GID=`id -g`
+
 docker run \
     --rm \
     $EXTRA_ARGS \
-    --user cafeyike \
+    --user $_UID:$_GID \
     --hostname cafe-yike \
     --workdir /home/cafeyike \
-    -p 8000:8000 \
-    --name yike-manager \
+    -p 8002:8000 \
+    --name yike-manager-test \
     -v $DB_DIR:/home/cafeyike/dat/ \
     cafe-yike:$VERSION $EXEC

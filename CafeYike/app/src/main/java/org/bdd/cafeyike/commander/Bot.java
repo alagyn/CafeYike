@@ -8,12 +8,15 @@ import org.bdd.cafeyike.commander.exceptions.CmdError;
 
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.OnlineStatus;
+import net.dv8tion.jda.api.audio.AudioModuleConfig;
 import net.dv8tion.jda.api.entities.SelfUser;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
+
+import club.minnced.discord.jdave.interop.JDaveSessionFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +61,7 @@ public class Bot
         temp_builder.setMemberCachePolicy(MemberCachePolicy.ALL);
         temp_builder.setChunkingFilter(ChunkingFilter.ALL);
         temp_builder.disableCache(CacheFlag.SCHEDULED_EVENTS);
+        temp_builder.setAudioModuleConfig(new AudioModuleConfig().withDaveSessionFactory(new JDaveSessionFactory()));
         api = temp_builder.build();
 
         listener.registerCommands(api);
