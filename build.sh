@@ -103,10 +103,8 @@ build_docker()
     export BUILDKIT_COLORS="run=cyan:error=yellow:cancel=blue:warning=white"
     cd ${home}/docker
 
-    CY_UID=`id -u cafeyike`
-
     docker build \
-        --build-arg UID=$CY_UID \
+        --build-arg UID=$UID \
         -t cafe-yike:$DOCKER_VERSION .
 }
 

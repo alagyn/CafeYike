@@ -50,3 +50,4 @@ ADD --chown=$USER build/CafeYike*.jar $HOME/
 # Install yikemng
 RUN $PY -m pip install $HOME/setup/yikemng-1.0.0-py3-none-any.whl
 
+CMD ["/home/cafeyike/start_manager.sh"]

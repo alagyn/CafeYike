@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cd ~
+
 source ~/.bashrc
 
 echo PY $PY
@@ -8,4 +10,4 @@ echo CafeYikeDB $CafeYikeDB
 echo FrontendDir $FrontendDir
 
 # This var is set in .bashrc
-$PY -m yikemng
+exec $PY -m yikemng

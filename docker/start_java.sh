@@ -2,4 +2,4 @@
 
 source ~/.bashrc
 
-java -cp $CafeYikeJar org.bdd.cafeyike.CafeYike
+exec java -cp $CafeYikeJar org.bdd.cafeyike.CafeYike
