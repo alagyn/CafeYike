@@ -3,16 +3,5 @@
         {
             "path": "."
         }
-    ],
-    "settings": {
-        "java.configuration.runtimes": [
-            {
-                "name": "JavaSE-11",
-                "path": "/usr/lib/jvm/java-11-openjdk-amd64",
-                "default": true
-            }
-        ],
-        "java.configuration.updateBuildConfiguration": "interactive",
-        "java.format.settings.url": "BDD_Eclipse_Format.xml",
-    }
+    ]
 }

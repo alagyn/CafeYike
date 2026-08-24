@@ -1,0 +1,38 @@
+FROM docker.io/alpine:3.24.1
+
+RUN apk add openjdk25-jre python3
+
+ARG JAR_NAME
+
+# Home dir
+ENV HOME=/opt/bdd
+# Virtual env location
+ENV VENV=${HOME}/venv
+# venv python exec
+ENV PY=${VENV}/bin/python3
+
+ENV CafeYikeJar=$HOME/$JAR_NAME
+ENV FrontendDir=$HOME/frontend
+ENV YM_SYS_CFG=/data/system.conf
+ENV CafeYikeDB=/data/cafe.db
+
+ADD build/requirements.txt $HOME/setup/
+# Install py dependencies
+RUN python3 -m venv $VENV && \
+    $PY -m pip install --upgrade pip && \
+    $PY -m pip install -r $HOME/setup/requirements.txt
+
+# Add frontend
+COPY build/ym-frontend/ $HOME/frontend/
+# Add python reqs
+ADD build/requirements.txt $HOME/setup/
+# Add yikemng
+ADD build/yikemng-1.0.0-py3-none-any.whl $HOME/setup/
+# Add CafeYike
+ADD build/CafeYike*.jar $HOME/
+
+# Install yikemng
+RUN $PY -m pip install $HOME/setup/yikemng-1.0.0-py3-none-any.whl
+
+WORKDIR /data
+CMD ["/opt/bdd/venv/bin/python3", "-m", "yikemng"]

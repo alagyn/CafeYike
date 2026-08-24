@@ -7,6 +7,7 @@ home=$(realpath $(dirname $0))
 DOCKER_VERSION=`cat $home/DOCKER_VERSION`
 
 BUILD_DIR=${home}/docker/build
+REGISTRY=${REGISTRY:-localhost}
 
 mkdir -p $BUILD_DIR
 
@@ -28,10 +29,10 @@ usage()
 build_java()
 {
     cd ${home}/CafeYike
-    YIKE_VERS=`./gradlew printVersion -q`
+    YIKE_VERS=`./build.sh -v | xargs`
+    echo "CafeYike version '${YIKE_VERS}'"
     YIKE_EXEC=CafeYike-$YIKE_VERS.jar
-    echo Building $YIKE_EXEC
-    ./gradlew fatJar
+    ./build.sh
 
     cp app/build/libs/$YIKE_EXEC ${BUILD_DIR}/
 }
@@ -78,23 +79,6 @@ build_frontend()
     cp -r dist/* ${BUILD_DIR}/ym-frontend/
 }
 
-# generate system.conf
-gen_config()
-{
-    echo Generating Config
-
-    if [ -z "${YIKE_EXEC}" ]
-    then
-        echo CafeYike exec not found
-        exit 1
-    fi
-
-    sed \
-        -e "s/@@yikeJar/$YIKE_EXEC/" \
-        ${home}/docker/bashrc_template.sh \
-        > ${BUILD_DIR}/.bashrc
-
-}
 
 # Build the docker container
 build_docker()
@@ -103,9 +87,9 @@ build_docker()
     export BUILDKIT_COLORS="run=cyan:error=yellow:cancel=blue:warning=white"
     cd ${home}/docker
 
-    docker build \
-        --build-arg UID=$UID \
-        -t cafe-yike:$DOCKER_VERSION .
+    podman build \
+        --build-arg JAR_NAME=$YIKE_EXEC \
+        -t ${REGISTRY}/cafe-yike:$DOCKER_VERSION .
 }
 
 BUILD_JAVA=1
@@ -173,5 +157,4 @@ else
     echo Skipping Frontend Build
 fi
 
-gen_config
 build_docker

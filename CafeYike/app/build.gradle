@@ -26,13 +26,6 @@ repositories {
 }
 
 dependencies {
-    // Use JUnit Jupiter for testing.
-    testImplementation libs.junit.jupiter
-
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
-    // This dependency is used by the application.
-    implementation libs.guava
 
     implementation 'net.dv8tion:JDA:6.3.1'
     implementation 'dev.arbjerg:lavaplayer:2.2.4'
@@ -56,8 +49,7 @@ application {
     mainClass = 'org.bdd.CafeYike'
 }
 
-task fatJar(type: Jar)
-{
+task fatJar(type: Jar) {
     manifest {
         attributes 'Main-Class': 'org.bdd.CafeYike'
     }
@@ -68,6 +60,8 @@ task fatJar(type: Jar)
 }
 
 task printVersion {
-  println project.version
+  doLast {
+    println project.version
+  }
 }
 
